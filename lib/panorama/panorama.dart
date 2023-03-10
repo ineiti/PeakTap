@@ -129,8 +129,8 @@ class PanoramaCH {
   double getHeightAtCoordinateInterpolate(double x, double y) {
     x = (x - xllcorner) / cellsize;
     y = (yllcorner / cellsize + nrows) - y / cellsize;
-    var x_0 = x.toInt();
-    var y_0 = y.toInt();
+    var x_0 = x.round();
+    var y_0 = y.round();
     var P0 = getData(x_0, y_0);
     var Px = getData(x_0 + 1, y_0);
     if (x_0 > x) {
@@ -141,7 +141,7 @@ class PanoramaCH {
     if (y_0 > y) {
       Py = getData(x_0, y_0 - 1);
     }
-    return P0 + (x - x_0).toInt() * (Px - P0) + (y - y_0).toInt() * (Py - P0);
+    return P0 + (x - x_0).abs() * (Px - P0) + (y - y_0).abs() * (Py - P0);
   }
 
   double getData(int x, int y) {

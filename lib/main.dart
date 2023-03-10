@@ -35,26 +35,30 @@ class MyHomePage extends StatefulWidget {
 
 class _MyHomePageState extends State<MyHomePage> {
   String _position = "Unknown";
-  var to_map = StreamController<MapParams>.broadcast();
-  var from_map = StreamController<MapParams>();
-  var to_panorama = StreamController<MapParams>.broadcast();
-  var from_panorama = StreamController<MapParams>();
+  var toMap = StreamController<MapParams>.broadcast();
+  var fromMap = StreamController<MapParams>();
+  var toPanorama = StreamController<MapParams>.broadcast();
+  var fromPanorama = StreamController<MapParams>();
+  List<double> origin = [46.5946, 6.31];
 
   @override
   void initState() {
     super.initState();
 
-    from_map.stream.listen((event) {
-      List<double> loc = event.location!;
-      double lat = loc[0], lon = loc[1];
-      to_map.add(event);
-      to_panorama.add(event);
-      setState(() {
-        _position = "${lat.toStringAsFixed(4)} / ${lon.toStringAsFixed(4)}";
+    fromMap.stream.listen((event) {
+      event.isLocation((loc) {
+        toPanorama.add(event);
+        setState(() {
+          _position = "${loc[0].toStringAsFixed(4)} / ${loc[1].toStringAsFixed(4)}";
+        });
       });
     });
 
-    to_map.add(MapParams()..location = [46.59, 6.31]);
+    fromPanorama.stream.listen((event) {
+      event.isSetupFinish(() {
+        toMap.add(MapParams.sendSetupFinish());
+      });
+    });
   }
 
   @override
@@ -80,22 +84,25 @@ class _MyHomePageState extends State<MyHomePage> {
                 ),
                 Text(
                   '$_position',
-                  style: Theme.of(context).textTheme.headlineMedium,
+                  style: Theme
+                      .of(context)
+                      .textTheme
+                      .headlineMedium,
                 ),
               ]),
             ),
             Expanded(
               // height: 500,
               // width: 500,
-              child: MapWidget(to_map.stream, from_map.sink),
+              child: MapWidget(toMap.stream, fromMap.sink, origin),
             ),
             Expanded(
               child: SizedBox(
                 height: double.infinity,
                 width: double.infinity,
                 child: Panorama(
-                  to_panorama: to_panorama.stream,
-                  from_panorama: from_panorama.sink,
+                  toPanorama: toPanorama.stream,
+                  fromPanorama: fromPanorama.sink,
                 ),
               ),
             ),

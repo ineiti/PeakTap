@@ -7,14 +7,20 @@ import 'package:google_maps/google_maps.dart';
 
 import 'map_widget.dart';
 
-MapWidget getMapWidget(Stream<MapParams> to, Sink<MapParams> from) =>
-    WebMap(to_map: to, from_map: from);
+MapWidget getMapWidget(
+        Stream<MapParams> to, Sink<MapParams> from, List<double> origin) =>
+    WebMap(toMap: to, fromMap: from, origin: LatLng(origin[0], origin[1]));
 
 class WebMap extends StatefulWidget implements MapWidget {
-  const WebMap({super.key, required this.to_map, required this.from_map});
+  const WebMap(
+      {super.key,
+      required this.toMap,
+      required this.fromMap,
+      required this.origin});
 
-  final Stream<MapParams> to_map;
-  final Sink<MapParams> from_map;
+  final Stream<MapParams> toMap;
+  final Sink<MapParams> fromMap;
+  final LatLng origin;
 
   @override
   State<WebMap> createState() => WebMapState();
@@ -23,6 +29,7 @@ class WebMap extends StatefulWidget implements MapWidget {
 class WebMapState extends State<WebMap> {
   Marker? marker;
   GMap? map;
+  int? lastClick;
 
   @override
   Widget build(BuildContext context) {
@@ -32,21 +39,24 @@ class WebMapState extends State<WebMap> {
     ui.platformViewRegistry.registerViewFactory(htmlId, (int viewId) {
       final mapOptions = MapOptions()
         ..zoom = 10.0
-        ..center = LatLng(46.59, 6.31);
+        ..center = widget.origin;
 
       final elem = DivElement()..id = htmlId;
       map = GMap(elem, mapOptions);
 
-      map?.onCenterChanged.listen((event) {});
-      map?.onDragstart.listen((event) {});
-      map?.onDblclick.listen((event) {
-        event.stop();
+      map?.onZoomChanged.listen((event) {
+        if (prevClick(false) < 2000) {
+          map?.center = marker?.position;
+        }
       });
       map?.onClick.listen((event) {
         if (map != null) {
+          if (prevClick(true) < 2000) {
+            return;
+          }
           LatLng center = event.latLng!;
-          widget.from_map.add(MapParams()
-            ..location = [center.lat.toDouble(), center.lng.toDouble()]);
+          setLocation([center.lat.toDouble(), center.lng.toDouble()]);
+          sendLocation();
         }
       });
 
@@ -54,22 +64,56 @@ class WebMapState extends State<WebMap> {
         ..position = map?.center
         ..map = map);
 
+      sendLocation();
+
       return elem;
     });
     return HtmlElementView(viewType: htmlId);
+  }
+
+  int prevClick(bool update) {
+    var now = DateTime.now().millisecondsSinceEpoch;
+    if (!update) {
+      if (lastClick != null) {
+        return now - lastClick!;
+      } else {
+        return now;
+      }
+    } else {
+      var prevClick = lastClick;
+      lastClick = now;
+      if (prevClick != null) {
+        return lastClick! - prevClick;
+      }
+      return lastClick!;
+    }
+  }
+
+  void sendLocation() {
+    if (marker != null && marker?.position != null) {
+      var pos = marker!.position!;
+      widget.fromMap.add(
+          MapParams.sendLocation([pos.lat.toDouble(), pos.lng.toDouble()]));
+    }
+  }
+
+  void setLocation(List<double> loc) {
+    setState(() {
+      map?.center = LatLng(loc[0], loc[1]);
+      marker?.position = LatLng(loc[0], loc[1]);
+    });
   }
 
   @override
   void initState() {
     super.initState();
 
-    widget.to_map.listen((mp) {
-      setState(() {
-        if (mp.location != null) {
-          map?.center =
-              LatLng(mp.location?.elementAt(0), mp.location?.elementAt(1));
-          marker?.position = map?.center;
-        }
+    widget.toMap.listen((event) {
+      event.isLocation((loc) {
+        setLocation(loc);
+      });
+      event.isSetupFinish(() {
+        sendLocation();
       });
     });
   }
