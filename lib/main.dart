@@ -46,18 +46,17 @@ class _MyHomePageState extends State<MyHomePage> {
     super.initState();
 
     fromMap.stream.listen((event) {
-      event.isLocation((loc) {
+      event.isLocationViewpoint((loc) {
         toPanorama.add(event);
         setState(() {
-          _position = "${loc[0].toStringAsFixed(4)} / ${loc[1].toStringAsFixed(4)}";
+          _position =
+              "${loc[0].toStringAsFixed(4)} / ${loc[1].toStringAsFixed(4)}";
         });
       });
     });
 
     fromPanorama.stream.listen((event) {
-      event.isSetupFinish(() {
-        toMap.add(MapParams.sendSetupFinish());
-      });
+      toMap.add(event);
     });
   }
 
@@ -84,10 +83,7 @@ class _MyHomePageState extends State<MyHomePage> {
                 ),
                 Text(
                   '$_position',
-                  style: Theme
-                      .of(context)
-                      .textTheme
-                      .headlineMedium,
+                  style: Theme.of(context).textTheme.headlineMedium,
                 ),
               ]),
             ),

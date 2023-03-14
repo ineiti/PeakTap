@@ -27,7 +27,7 @@ class WebMap extends StatefulWidget implements MapWidget {
 }
 
 class WebMapState extends State<WebMap> {
-  Marker? marker;
+  Marker? marker, poi;
   GMap? map;
   int? lastClick;
 
@@ -93,7 +93,7 @@ class WebMapState extends State<WebMap> {
     if (marker != null && marker?.position != null) {
       var pos = marker!.position!;
       widget.fromMap.add(
-          MapParams.sendLocation([pos.lat.toDouble(), pos.lng.toDouble()]));
+          MapParams.sendLocationViewpoint([pos.lat.toDouble(), pos.lng.toDouble()]));
     }
   }
 
@@ -104,13 +104,29 @@ class WebMapState extends State<WebMap> {
     });
   }
 
+  void setPOI(LatLng pos){
+    setState(() {
+      print("Setting position to $pos");
+      if (poi == null) {
+        poi = Marker(MarkerOptions()
+          ..position = pos
+          ..map = map);
+      } else {
+        poi?.position = pos;
+      }
+    });
+  }
+
   @override
   void initState() {
     super.initState();
 
     widget.toMap.listen((event) {
-      event.isLocation((loc) {
+      event.isLocationViewpoint((loc) {
         setLocation(loc);
+      });
+      event.isLocationPOI((loc) {
+        setPOI(LatLng(loc[0], loc[1]));
       });
       event.isSetupFinish(() {
         sendLocation();

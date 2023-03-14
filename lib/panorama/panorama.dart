@@ -1,20 +1,15 @@
 import 'dart:async' show Future;
 import 'dart:typed_data';
-import 'dart:ui' as ui;
+import 'dart:ui';
 import 'package:flutter/services.dart' show rootBundle;
-import 'dart:math' show atan, cos, log, max, pi, pow, sin;
+import 'dart:math' show atan, cos, log, max, pi, pow, sin, sqrt;
 
-import 'dart:io';
 import 'package:image/image.dart' as img;
-
-import '../map_widget/map_widget.dart';
 
 class PanoramaCH {
   late int ncols, nrows;
   late double xllcorner, xulcorner, yllcorner, cellsize, nodataValue;
   late List<List<double>> elevation;
-  double hor_start = 0, hor_end = 360;
-  double ver_start = -5, ver_end = 20;
 
   static Future<List<String>> readASC() async {
     return (await rootBundle.loadString('assets/swisstopo.asc')).split("\n");
@@ -38,110 +33,22 @@ class PanoramaCH {
     });
   }
 
-  List<double> getXYDouble(List<double> location) {
-    double fx = _WGStoCHy(location[0], location[1]);
-    double fy = _WGStoCHx(location[0], location[1]);
-    double x = (fx - xllcorner) / cellsize;
-    double y = (yllcorner / cellsize + nrows) - fy / cellsize;
-    return [x, y];
-  }
-
-  List<int> getXYInt(List<double> location) {
-    var dxy = getXYDouble(location);
-    return [dxy[0].toInt(), dxy[1].toInt()];
-  }
-
-  Uint8List getImage(List<double> location) {
-    // Create a 256x256 8-bit (default) rgb (default) image.
-    final image = img.Image(width: 1024, height: 256);
-    // Iterate over its pixels
-    // printMap(image, location);
-    printPanorama(image, location);
-    // Encode the resulting image to the PNG image format.
-    return img.encodePng(image);
-  }
-
-  void printMap(img.Image map, List<double> location) {
-    var dxy = getXYInt(location);
-    var dx = dxy[0] - map.width ~/ 2;
-    var dy = dxy[1] - map.height ~/ 2;
-    for (var pixel in map) {
-      var gray = getData(pixel.x + dx, pixel.y + dy) / 20;
-      // Set the pixels red value to its x position value, creating a gradient.
-      pixel
-        ..r = gray
-        ..g = gray
-        ..b = gray;
-    }
-  }
-
-  void printPanorama(img.Image pan, List<double> location) {
-    // # Fill the panorama array with the distances encoded as shades of gray
-    for (var x = 0; x < pan.width; x++) {
-      paintVerticalLine3D(pan, location, x);
-    }
-  }
-
-  void paintVerticalLine3D(img.Image pan, List<double> location, int vert) {
-    // Get the height of the observer
-    var x = _WGStoCHy(location[0], location[1]);
-    var y = _WGStoCHx(location[0], location[1]);
-    var horAngle = hor_start + (hor_end - hor_start) * vert / pan.width / 180 * pi;
-    horAngle = (2 * pi - horAngle) + pi / 2;
-    var verAngleMax = -180.0;
-    var distance = 1.0;
-    var dx = cos(horAngle) * cellsize;
-    var dy = sin(horAngle) * cellsize;
-    var heightReference = getHeightAtCoordinateInterpolate(x, y) + 100;
-    while (true) {
-      x += dx;
-      y += dy;
-      var height = getHeightAtCoordinateInterpolate(x, y);
-      if (height == 0) {
-        break;
-      }
-
-      var verAngle = atan((height - heightReference) / distance) * 180 / pi;
-      if (verAngle > verAngleMax) {
-        // print("Higher: $verAngle > $verAngleMax");
-        // print("higher angle at $x / $y / $distance = $verAngle, $verAngleMax");
-        var mult = 1e-3;
-        var gray = max((log(distance * mult) * 255 / log(100000 * mult)), 0);
-        for (var j = 0; j < pan.height; j++) {
-          var verAnglePan = ver_end + (ver_start - ver_end) * j / pan.height;
-          if (verAnglePan > verAngle) {
-            continue;
-          }
-          if (verAnglePan < verAngleMax) {
-            break;
-          }
-          // print("Paint: $j - $gray - $distance - $verAnglePan");
-          // print("set pixel $vert/$j with distance $distance to $gray");
-          pan.setPixelRgb(vert, j, gray, gray, gray);
-        }
-        verAngleMax = verAngle;
-      }
-
-      distance += cellsize;
-    }
-  }
-
   double getHeightAtCoordinateInterpolate(double x, double y) {
     x = (x - xllcorner) / cellsize;
     y = (yllcorner / cellsize + nrows) - y / cellsize;
     var x_0 = x.round();
     var y_0 = y.round();
-    var P0 = getData(x_0, y_0);
-    var Px = getData(x_0 + 1, y_0);
+    var p0 = getData(x_0, y_0);
+    var pX = getData(x_0 + 1, y_0);
     if (x_0 > x) {
-      Px = getData(x_0 - 1, y_0);
+      pX = getData(x_0 - 1, y_0);
     }
 
-    var Py = getData(x_0, y_0 + 1);
+    var pY = getData(x_0, y_0 + 1);
     if (y_0 > y) {
-      Py = getData(x_0, y_0 - 1);
+      pY = getData(x_0, y_0 - 1);
     }
-    return P0 + (x - x_0).abs() * (Px - P0) + (y - y_0).abs() * (Py - P0);
+    return p0 + (x - x_0).abs() * (pX - p0) + (y - y_0).abs() * (pY - p0);
   }
 
   double getData(int x, int y) {
@@ -150,33 +57,111 @@ class PanoramaCH {
     }
     return elevation[y][x];
   }
+}
 
-  Future<ui.Image> convertImageToFlutterUi(img.Image image) async {
-    if (image.format != img.Format.uint8 || image.numChannels != 4) {
-      final cmd = img.Command()
-        ..image(image)
-        ..convert(format: img.Format.uint8, numChannels: 4);
-      final rgba8 = await cmd.getImageThread();
-      if (rgba8 != null) {
-        image = rgba8;
+class PanoramaImage {
+  PanoramaCH ch;
+  CoordCH location;
+  img.Image tmpImage;
+  List<List<CoordCH?>> reverse;
+
+  double horStart = 0, horEnd = 360;
+  double verStart = -5, verEnd = 20;
+
+  PanoramaImage(this.ch, this.location, int width, int height)
+      : tmpImage = img.Image(width: width, height: height),
+        reverse = List.generate(height, (i) => List.filled(width, null)) {
+    _drawPanorama();
+    // _drawMap();
+  }
+
+  Uint8List getImageAsU8() {
+    return img.encodePng(tmpImage);
+  }
+
+  CoordGPS? toGPS(Size size, Offset pos) {
+    // print("size is: $size - ${size.width} x ${size.height}");
+    final mult = size.height / tmpImage.height;
+    final offset = (tmpImage.width * mult - size.width) / 2;
+    // print("offset is: $offset");
+    final mapX = (pos.dx + offset) ~/ mult;
+    final mapY = pos.dy ~/ mult;
+    // print("mapX: $mapX - mapY: $mapY");
+    if (mapX >= 0 && mapX < tmpImage.width) {
+      var c = reverse[mapY][mapX];
+      if (c == null) {
+        print("Touch the sky");
+      } else {
+        print("CoordCH: ${c.x} - ${c.y}");
+        return c.toGPS();
       }
     }
+    return null;
+  }
 
-    ui.ImmutableBuffer buffer =
-        await ui.ImmutableBuffer.fromUint8List(image.toUint8List());
+  void _drawMap() {
+    var multX = ch.ncols / tmpImage.width;
+    var multY = ch.nrows / tmpImage.height;
+    for (var pixel in tmpImage) {
+      var gray =
+          ch.getData((pixel.x * multX).toInt(), (pixel.y * multY).toInt()) / 20;
+      // Set the pixels red value to its x position value, creating a gradient.
+      pixel
+        ..r = gray
+        ..g = gray
+        ..b = gray;
+    }
+  }
 
-    ui.ImageDescriptor id = ui.ImageDescriptor.raw(buffer,
-        height: image.height,
-        width: image.width,
-        pixelFormat: ui.PixelFormat.rgba8888);
+  void _drawPanorama() {
+    print("image is: ${tmpImage.height} at ${location.x} ${location.y}");
+    for (var vert = 0; vert < tmpImage.width; vert++) {
+      // Get the height of the observer
+      var x = location.x;
+      var y = location.y;
+      var horAngle =
+          horStart + (horEnd - horStart) * vert / tmpImage.width / 180 * pi;
+      horAngle = (2 * pi - horAngle) + pi / 2;
+      var verAngleMax = -180.0;
+      var distance = 1.0;
+      var dx = cos(horAngle) * ch.cellsize;
+      var dy = sin(horAngle) * ch.cellsize;
+      var heightReference = ch.getHeightAtCoordinateInterpolate(x, y) + 100;
+      while (true) {
+        x += dx;
+        y += dy;
+        var height = ch.getHeightAtCoordinateInterpolate(x, y);
+        if (height == 0) {
+          break;
+        }
 
-    ui.Codec codec = await id.instantiateCodec(
-        targetHeight: image.height, targetWidth: image.width);
+        var verAngle = atan((height - heightReference) / distance) * 180 / pi;
+        if (verAngle > verAngleMax) {
+          // print("Higher: $verAngle > $verAngleMax");
+          if (verAngle > 10) {
+            print(
+                "higher angle at $x / $y / $distance = $verAngle, $verAngleMax");
+          }
+          var mult = 1e-3;
+          var gray = max((log(distance * mult) * 255 / log(100000 * mult)), 0);
+          for (var j = 0; j < tmpImage.height; j++) {
+            var verAnglePan =
+                verEnd + (verStart - verEnd) * j / tmpImage.height;
+            if (verAnglePan > verAngle) {
+              continue;
+            }
+            if (verAnglePan < verAngleMax) {
+              break;
+            }
+            tmpImage.setPixelRgb(vert, j, gray, gray, gray);
+            reverse[j][vert] = CoordCH(x, y);
+          }
+          verAngleMax = verAngle;
+        }
 
-    ui.FrameInfo fi = await codec.getNextFrame();
-    ui.Image uiImage = fi.image;
-
-    return uiImage;
+        distance += sqrt(dx * dx + dy * dy);
+      }
+    }
   }
 }
 
@@ -187,7 +172,15 @@ class CoordGPS {
   CoordGPS(this.lat, this.lng) {}
 
   CoordCH toCH() {
-    return CoordCH(_WGStoCHx(lat, lng), _WGStoCHy(lat, lng));
+    return CoordCH(_WGStoCHy(lat, lng), _WGStoCHx(lat, lng));
+  }
+
+  List<double> toList() {
+    return [lat, lng];
+  }
+
+  static CoordGPS fromList(List<double> loc) {
+    return CoordGPS(loc[0], loc[1]);
   }
 }
 
@@ -198,7 +191,7 @@ class CoordCH {
   CoordCH(this.x, this.y) {}
 
   CoordGPS toGPS() {
-    return CoordGPS(_CHtoWGSlat(y, x), _CHtoWGSlng(y, x));
+    return CoordGPS(_CHtoWGSlat(x, y), _CHtoWGSlng(x, y));
   }
 }
 

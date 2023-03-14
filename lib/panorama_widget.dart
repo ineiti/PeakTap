@@ -1,6 +1,4 @@
-import 'dart:typed_data';
-import 'dart:ui';
-import 'package:image/image.dart' as img;
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 
 import 'map_widget/map_widget.dart';
@@ -17,12 +15,42 @@ class Panorama extends StatefulWidget {
 }
 
 class PanoramaState extends State<Panorama> {
-  var pd = Image.asset("empty.png");
+  var png = Image.asset("empty.png");
   PanoramaCH? ch;
+  PanoramaImage? pi;
+  final GlobalKey _widgetKey = GlobalKey();
+  Size imgSize = const Size(1024, 512);
 
   @override
   Widget build(BuildContext context) {
-    return pd;
+    return GestureDetector(
+        onTap: () {
+          // print("tapped");
+        },
+        onTapDown: (tap) {
+          print("tapped: ${tap.globalPosition} - ${tap.localPosition}");
+          if (pi == null) {
+            return;
+          }
+          final RenderBox renderBox =
+          _widgetKey.currentContext?.findRenderObject() as RenderBox;
+          var gps = pi!.toGPS(renderBox.size, tap.localPosition);
+          if (gps != null) {
+            widget.fromPanorama.add(MapParams.sendLocationPOI(gps.toList()));
+          }
+        },
+        child: Listener(
+          child: png,
+          key: _widgetKey,
+          onPointerMove: (update) {
+            // print("move update: ${update.delta}");
+          },
+          onPointerSignal: (signal) {
+            if (signal is PointerScrollEvent) {
+              // print("Scrolling: ${signal.scrollDelta}");
+            }
+          },
+        ));
   }
 
   @override
@@ -33,9 +61,13 @@ class PanoramaState extends State<Panorama> {
         ch = PanoramaCH(lines);
 
         widget.toPanorama.listen((event) {
-          event.isLocation((loc) {
+          event.isLocationViewpoint((loc) {
             setState(() {
-              pd = Image.memory(ch!.getImage(loc));
+              var locCH = CoordGPS.fromList(loc).toCH();
+              pi = PanoramaImage(
+                  ch!, locCH, imgSize.width.toInt(), imgSize.height.toInt());
+              png = Image.memory(pi!.getImageAsU8(),
+                  fit: BoxFit.fitHeight, repeat: ImageRepeat.repeatY);
             });
           });
         });
