@@ -41,9 +41,13 @@ class WebMapState extends State<WebMap> {
         ..zoom = 10.0
         ..center = widget.origin;
 
-      final elem = DivElement()..id = htmlId;
-      map = GMap(elem, mapOptions);
+      final elem = DivElement()
+        ..id = htmlId
+        ..style.width = "100%"
+        ..style.height = "100%"
+        ..style.border = 'none';
 
+      map = GMap(elem, mapOptions);
       map?.onZoomChanged.listen((event) {
         if (prevClick(false) < 2000) {
           map?.center = marker?.position;
@@ -92,8 +96,8 @@ class WebMapState extends State<WebMap> {
   void sendLocation() {
     if (marker != null && marker?.position != null) {
       var pos = marker!.position!;
-      widget.fromMap.add(
-          MapParams.sendLocationViewpoint([pos.lat.toDouble(), pos.lng.toDouble()]));
+      widget.fromMap.add(MapParams.sendLocationViewpoint(
+          [pos.lat.toDouble(), pos.lng.toDouble()]));
     }
   }
 
@@ -104,7 +108,7 @@ class WebMapState extends State<WebMap> {
     });
   }
 
-  void setPOI(LatLng pos){
+  void setPOI(LatLng pos) {
     setState(() {
       print("Setting position to $pos");
       if (poi == null) {
@@ -116,6 +120,8 @@ class WebMapState extends State<WebMap> {
       }
     });
   }
+
+  void setPolygon(List<List<double>> poly) {}
 
   @override
   void initState() {
