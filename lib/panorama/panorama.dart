@@ -66,11 +66,11 @@ class PanoramaImage {
   List<List<CoordCH?>> reverse;
 
   double horStart = 0, horEnd = 360;
-  double verStart = -5, verEnd = 20;
+  double verStart = -5, verEnd = 25;
 
-  PanoramaImage(this.ch, this.location, int width, int height)
-      : tmpImage = img.Image(width: width, height: height),
-        reverse = List.generate(height, (i) => List.filled(width, null)) {
+  PanoramaImage(this.ch, this.location, int height)
+      : tmpImage = img.Image(width: height * 12, height: height),
+        reverse = List.generate(height, (i) => List.filled(height * 12, null)) {
     _drawPanorama();
     // _drawMap();
   }
@@ -137,11 +137,6 @@ class PanoramaImage {
 
         var verAngle = atan((height - heightReference) / distance) * 180 / pi;
         if (verAngle > verAngleMax) {
-          // print("Higher: $verAngle > $verAngleMax");
-          if (verAngle > 10) {
-            print(
-                "higher angle at $x / $y / $distance = $verAngle, $verAngleMax");
-          }
           var mult = 1e-3;
           var gray = max((log(distance * mult) * 255 / log(100000 * mult)), 0);
           for (var j = 0; j < tmpImage.height; j++) {

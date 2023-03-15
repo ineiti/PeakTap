@@ -19,7 +19,8 @@ class PanoramaState extends State<Panorama> {
   PanoramaCH? ch;
   PanoramaImage? pi;
   final GlobalKey _widgetKey = GlobalKey();
-  Size imgSize = const Size(1024, 512);
+  final imgHeight = 256;
+  double offset = 0.5;
 
   @override
   Widget build(BuildContext context) {
@@ -33,23 +34,24 @@ class PanoramaState extends State<Panorama> {
             return;
           }
           final RenderBox renderBox =
-          _widgetKey.currentContext?.findRenderObject() as RenderBox;
+              _widgetKey.currentContext?.findRenderObject() as RenderBox;
           var gps = pi!.toGPS(renderBox.size, tap.localPosition);
           if (gps != null) {
             widget.fromPanorama.add(MapParams.sendLocationPOI(gps.toList()));
           }
         },
         child: Listener(
-          child: png,
           key: _widgetKey,
           onPointerMove: (update) {
-            // print("move update: ${update.delta}");
+            offset += update.delta.dx / imgHeight;
+            print("move update: ${update.delta} to offset $offset");
           },
           onPointerSignal: (signal) {
             if (signal is PointerScrollEvent) {
-              // print("Scrolling: ${signal.scrollDelta}");
+              print("Scrolling: ${signal.scrollDelta}");
             }
           },
+          child: png,
         ));
   }
 
@@ -64,8 +66,7 @@ class PanoramaState extends State<Panorama> {
           event.isLocationViewpoint((loc) {
             setState(() {
               var locCH = CoordGPS.fromList(loc).toCH();
-              pi = PanoramaImage(
-                  ch!, locCH, imgSize.width.toInt(), imgSize.height.toInt());
+              pi = PanoramaImage(ch!, locCH, imgHeight);
               png = Image.memory(pi!.getImageAsU8(),
                   fit: BoxFit.fitHeight, repeat: ImageRepeat.repeatY);
             });

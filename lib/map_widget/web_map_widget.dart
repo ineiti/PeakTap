@@ -1,9 +1,10 @@
 import 'dart:async';
-import 'dart:html';
-import 'dart:ui' as ui;
+import 'dart:collection';
+import 'dart:math';
 
 import 'package:flutter/material.dart';
-import 'package:google_maps/google_maps.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:pointer_interceptor/pointer_interceptor.dart';
 
 import 'map_widget.dart';
 
@@ -28,51 +29,95 @@ class WebMap extends StatefulWidget implements MapWidget {
 
 class WebMapState extends State<WebMap> {
   Marker? marker, poi;
-  GMap? map;
   int? lastClick;
+  Set<Polygon> _polygon = HashSet<Polygon>();
+  final Map<MarkerId, Marker> _markers = {};
+  final _markerCenter = const MarkerId('0');
+  final _markerView = const MarkerId('1');
+  late GoogleMapController _controller;
 
   @override
   Widget build(BuildContext context) {
-    final String htmlId = "map";
+    return GoogleMap(
+      initialCameraPosition: CameraPosition(
+        target: widget.origin,
+        zoom: 10,
+      ),
+      polygons: _polygon,
+      markers: _markers.values.toSet(),
+      onMapCreated: _onMapCreated,
+      onTap: _onMapTap,
+    );
+  }
 
-    // ignore: undefined_prefixed_name
-    ui.platformViewRegistry.registerViewFactory(htmlId, (int viewId) {
-      final mapOptions = MapOptions()
-        ..zoom = 10.0
-        ..center = widget.origin;
+  void _onMapCreated(GoogleMapController controller) {
+    _controller = controller;
+    _onMapTap(widget.origin);
+  }
 
-      final elem = DivElement()
-        ..id = htmlId
-        ..style.width = "100%"
-        ..style.height = "100%"
-        ..style.border = 'none';
-
-      map = GMap(elem, mapOptions);
-      map?.onZoomChanged.listen((event) {
-        if (prevClick(false) < 2000) {
-          map?.center = marker?.position;
-        }
-      });
-      map?.onClick.listen((event) {
-        if (map != null) {
-          if (prevClick(true) < 2000) {
-            return;
-          }
-          LatLng center = event.latLng!;
-          setLocation([center.lat.toDouble(), center.lng.toDouble()]);
-          sendLocation();
-        }
-      });
-
-      marker ??= Marker(MarkerOptions()
-        ..position = map?.center
-        ..map = map);
-
-      sendLocation();
-
-      return elem;
+  void _onMapTap(LatLng newPosition) {
+    setState(() {
+      _markers[_markerCenter] = Marker(
+        markerId: MarkerId('center_${DateTime.now().millisecondsSinceEpoch}'),
+        position: newPosition,
+      );
     });
-    return HtmlElementView(viewType: htmlId);
+    _controller.animateCamera(CameraUpdate.newLatLng(newPosition));
+    Future.delayed(const Duration(milliseconds: 150), () {
+      sendLocation(newPosition);
+    });
+  }
+
+  void sendLocation(LatLng pos) {
+    // if (marker != null && marker?.position != null) {
+    //   var pos = marker!.position!;
+    widget.fromMap.add(MapParams.sendLocationViewpoint(
+        [pos.latitude.toDouble(), pos.longitude.toDouble()]));
+    // }
+  }
+
+  void setPOI(LatLng pos) {
+    setState(() {
+      _markers[_markerView] = Marker(
+        markerId: MarkerId('view_${DateTime.now().millisecondsSinceEpoch}'),
+        position: pos,
+      );
+    });
+  }
+
+  void setPolygon(List<List<double>> poly) {
+    List<LatLng> points = [
+      const LatLng(46.5946, 6.31),
+      const LatLng(46.5946, 6.41),
+      const LatLng(46.6946, 6.41),
+      const LatLng(46.6946, 6.31),
+    ];
+
+    //initialize polygon
+    _polygon.add(Polygon(
+      // given polygonId
+      polygonId: const PolygonId('1'),
+      // initialize the list of points to display polygon
+      points: points,
+      // given color to polygon
+      fillColor: Colors.green.withOpacity(0.3),
+      // given border color to polygon
+      strokeColor: Colors.green,
+      geodesic: true,
+      // given width of border
+      strokeWidth: 4,
+    ));
+  }
+
+  @override
+  void initState() {
+    super.initState();
+
+    widget.toMap.listen((event) {
+      event.isLocationPOI((loc) {
+        setPOI(LatLng(loc[0], loc[1]));
+      });
+    });
   }
 
   int prevClick(bool update) {
@@ -92,51 +137,101 @@ class WebMapState extends State<WebMap> {
       return lastClick!;
     }
   }
+}
 
-  void sendLocation() {
-    if (marker != null && marker?.position != null) {
-      var pos = marker!.position!;
-      widget.fromMap.add(MapParams.sendLocationViewpoint(
-          [pos.lat.toDouble(), pos.lng.toDouble()]));
-    }
+final rnd = Random();
+
+class WebMapState2 extends State<WebMap> {
+  // We use this value to paint new Markers close to the center of the last movement of the map.
+  // Updates to this don't need to call setState, this is just a value that we care about some times.
+  LatLng _center = LatLng(40.416775, -3.703790);
+
+  // Will be updated when we tap on the map, or on the fAB.
+  // Updates to this must call setState, so the GoogleMap gets re-painted.
+  Map<MarkerId, Marker> _markers = {
+    MarkerId('0'): Marker(
+        markerId: MarkerId('madrid_initial'),
+        position: LatLng(40.416775, -3.703790)),
+  };
+
+  // Will be initialized later by the [_onMapCreated] function.
+  late GoogleMapController _controller;
+
+  // This jitters a double a little bit, according to `scale`.
+  // `scale` limits at which decimal point will the random function apply:
+  // 0.00000001 -> tiny changes, 1.0 -> potentially large changes!
+  double _jitterDouble(double val, double scale) {
+    final min = val - (val * scale);
+    final max = val + (val * scale);
+    return rnd.nextDouble() * (max - min) + min;
   }
 
-  void setLocation(List<double> loc) {
+  // Jitters the lat/lng of a position, according to `scale`.
+  LatLng _jitterPosition(LatLng position, double scale) {
+    return LatLng(_jitterDouble(position.latitude, scale),
+        _jitterDouble(position.longitude, scale));
+  }
+
+  // Creates a marker with a unique variation on a `MarkerId`, around a given `position`.
+  Marker _timestampedMarker(MarkerId id, LatLng position) {
+    return Marker(
+      markerId:
+          MarkerId('${id.value}_${DateTime.now().millisecondsSinceEpoch}'),
+      // markerId: MarkerId('${id.value}_${DateTime.now().millisecondsSinceEpoch}'),
+      position: _jitterPosition(position,
+          0.002), // Jitter so not all markers fall in the same center...
+    );
+  }
+
+  void _onMapCreated(GoogleMapController controller) {
+    _controller = controller;
+  }
+
+  void _onCameraMove(CameraPosition position) {
+    _center = position.target;
+  }
+
+  void _onMapTap(LatLng newPosition) {
+    // For each marker, move it close to the latLng of the click...
     setState(() {
-      map?.center = LatLng(loc[0], loc[1]);
-      marker?.position = LatLng(loc[0], loc[1]);
+      _markers.forEach((markerId, marker) {
+        _markers[markerId] = Marker(
+            markerId: MarkerId(
+                "${markerId.value}_${DateTime.now().millisecondsSinceEpoch}"),
+            position: newPosition);
+        // _markers[markerId] = _timestampedMarker(markerId, newPosition);
+        // When the Marker position bug is fixed, this can be replaced by:
+        // _markers[markerId] = marker.copyWith(positionParam: _jitterPosition(newPosition));
+      });
+    });
+    // // Center the camera where the user clicked after a few milliseconds...
+    // Future.delayed(Duration(milliseconds: 150), () {
+    //   _controller.animateCamera(CameraUpdate.newLatLng(newPosition));
+    // });
+  }
+
+  // Adds a marker near the `_center` of the map.
+  void _addMarker() {
+    setState(() {
+      // Add a new marker to the set of markers available...
+      final MarkerId id = MarkerId('${_markers.length}');
+      _markers[id] = _timestampedMarker(id, _center);
     });
   }
-
-  void setPOI(LatLng pos) {
-    setState(() {
-      print("Setting position to $pos");
-      if (poi == null) {
-        poi = Marker(MarkerOptions()
-          ..position = pos
-          ..map = map);
-      } else {
-        poi?.position = pos;
-      }
-    });
-  }
-
-  void setPolygon(List<List<double>> poly) {}
 
   @override
-  void initState() {
-    super.initState();
-
-    widget.toMap.listen((event) {
-      event.isLocationViewpoint((loc) {
-        setLocation(loc);
-      });
-      event.isLocationPOI((loc) {
-        setPOI(LatLng(loc[0], loc[1]));
-      });
-      event.isSetupFinish(() {
-        sendLocation();
-      });
-    });
+  Widget build(BuildContext context) {
+    return GoogleMap(
+      initialCameraPosition: CameraPosition(
+        target: _center,
+        zoom: 10,
+      ),
+      zoomControlsEnabled: false,
+      minMaxZoomPreference: MinMaxZoomPreference(10, 10),
+      markers: _markers.values.toSet(),
+      onMapCreated: _onMapCreated,
+      onTap: _onMapTap,
+      onCameraMove: _onCameraMove,
+    );
   }
 }
