@@ -1,8 +1,8 @@
 import 'dart:async' show Future;
 import 'dart:typed_data';
-import 'dart:ui';
+import 'dart:ui' as ui;
 import 'package:flutter/services.dart' show rootBundle;
-import 'dart:math' show atan, cos, log, max, pi, pow, sin, sqrt;
+import 'dart:math' show atan, cos, log, max, min, pi, pow, sin, sqrt;
 
 import 'package:image/image.dart' as img;
 
@@ -60,6 +60,98 @@ class PanoramaCH {
 }
 
 class PanoramaImage {
+  final List<List<CoordCH?>> _reverse;
+  ui.Image map;
+  double offset;
+  ui.Size _size;
+  bool _changed = true;
+
+  PanoramaImage(double? off,
+      {required this.map, required List<List<CoordCH?>> reverse})
+      : _reverse = reverse,
+        _size = ui.Size(map.width.toDouble(), map.height.toDouble()),
+        offset = off ?? -1;
+
+  int height() {
+    return _reverse.length;
+  }
+
+  int width() {
+    return _reverse[0].length;
+  }
+
+  bool changed() {
+    var c = _changed;
+    _changed = false;
+    return c;
+  }
+
+  double viewDirection() => _imgCenterView() * 2 * pi / width();
+
+  double viewAngle() => _imgViewWidth() * 2 * pi / width();
+
+  List<List<double>> getHorizon() {
+    List<List<double>> horizon = [];
+    var imgOffset = offset ~/ _imgViewFactor();
+    var end = ((imgOffset + _imgViewWidth()) % width()).toInt();
+    for (var dx = imgOffset % width();
+        dx != end;
+        dx = (dx + 1) % width()) {
+      // print("dx: $dx - $offset - ${width()}");
+      for (var y = 0; y < height(); y++){
+        // print("y: $y");
+        if (dx >= _reverse[y].length){
+          print("Dx overflow: $dx - ${width()} - ${_reverse[y].length}");
+        }
+        var c = _reverse[y][dx.toInt()];
+        if (c != null){
+          horizon.add(c.toGPS().toList());
+          break;
+        }
+      }
+    }
+    return horizon;
+  }
+
+  void updateOffset(double dx) {
+    _changed = true;
+    offset += dx;
+    offset %= width() * _imgViewFactor();
+  }
+
+  void setSize(ui.Size s) {
+    if (_size != s) {
+      _changed = true;
+    } else {}
+    _size = s;
+    if (offset == -1) {
+      offset = width() * _imgViewFactor() / 2;
+    }
+  }
+
+  CoordGPS? toGPS(ui.Offset pos) {
+    final mapX = ((offset + pos.dx)) ~/ _imgViewFactor() % width();
+    final mapY = pos.dy ~/ _imgViewFactor();
+    var c = _reverse[mapY][mapX];
+    return c?.toGPS();
+  }
+
+  double _imgViewFactor() => _size.height / height();
+
+  double _imgViewWidth() => _size.width / _imgViewFactor();
+
+  double _imgCenterView() => _imgViewWidth() / 2 + offset / _imgViewFactor();
+
+  ui.Rect getViewRect() {
+    var r = ui.Rect.fromCenter(
+        center: ui.Offset(_imgCenterView(), height() / 2),
+        width: _imgViewWidth(),
+        height: height().toDouble());
+    return r;
+  }
+}
+
+class PanoramaImageBuilder {
   PanoramaCH ch;
   CoordCH location;
   img.Image tmpImage;
@@ -68,8 +160,8 @@ class PanoramaImage {
   double horStart = 0, horEnd = 360;
   double verStart = -5, verEnd = 25;
 
-  PanoramaImage(this.ch, this.location, int height)
-      : tmpImage = img.Image(width: height * 12, height: height),
+  PanoramaImageBuilder(this.ch, this.location, int height)
+      : tmpImage = img.Image(width: height * 12 * 2, height: height),
         reverse = List.generate(height, (i) => List.filled(height * 12, null)) {
     _drawPanorama();
     // _drawMap();
@@ -79,29 +171,15 @@ class PanoramaImage {
     return img.encodePng(tmpImage);
   }
 
-  CoordGPS? toGPS(Size size, Offset pos) {
-    // print("size is: $size - ${size.width} x ${size.height}");
-    final mult = size.height / tmpImage.height;
-    final offset = (tmpImage.width * mult - size.width) / 2;
-    // print("offset is: $offset");
-    final mapX = (pos.dx + offset) ~/ mult;
-    final mapY = pos.dy ~/ mult;
-    // print("mapX: $mapX - mapY: $mapY");
-    if (mapX >= 0 && mapX < tmpImage.width) {
-      var c = reverse[mapY][mapX];
-      if (c == null) {
-        print("Touch the sky");
-      } else {
-        print("CoordCH: ${c.x} - ${c.y}");
-        return c.toGPS();
-      }
-    }
-    return null;
+  Future<PanoramaImage> getImage(double? offset) async {
+    ui.Codec codec = await ui.instantiateImageCodec(img.encodePng(tmpImage));
+    ui.FrameInfo frameInfo = await codec.getNextFrame();
+    return PanoramaImage(map: frameInfo.image, reverse: reverse, offset);
   }
 
   void _drawMap() {
-    var multX = ch.ncols / tmpImage.width;
-    var multY = ch.nrows / tmpImage.height;
+    var multX = ch.ncols / reverse[0].length;
+    var multY = ch.nrows / reverse.length;
     for (var pixel in tmpImage) {
       var gray =
           ch.getData((pixel.x * multX).toInt(), (pixel.y * multY).toInt()) / 20;
@@ -115,12 +193,13 @@ class PanoramaImage {
 
   void _drawPanorama() {
     print("image is: ${tmpImage.height} at ${location.x} ${location.y}");
-    for (var vert = 0; vert < tmpImage.width; vert++) {
+    var panoramaWidth = tmpImage.width / 2;
+    for (var vert = 0; vert < panoramaWidth; vert++) {
       // Get the height of the observer
       var x = location.x;
       var y = location.y;
       var horAngle =
-          horStart + (horEnd - horStart) * vert / tmpImage.width / 180 * pi;
+          horStart + (horEnd - horStart) * vert / panoramaWidth / 180 * pi;
       horAngle = (2 * pi - horAngle) + pi / 2;
       var verAngleMax = -180.0;
       var distance = 1.0;
@@ -138,7 +217,8 @@ class PanoramaImage {
         var verAngle = atan((height - heightReference) / distance) * 180 / pi;
         if (verAngle > verAngleMax) {
           var mult = 1e-3;
-          var gray = max((log(distance * mult) * 255 / log(100000 * mult)), 0);
+          var gray = min(
+              max((log(distance * mult) * 255 / log(200000 * mult)), 0), 255);
           for (var j = 0; j < tmpImage.height; j++) {
             var verAnglePan =
                 verEnd + (verStart - verEnd) * j / tmpImage.height;
@@ -149,6 +229,8 @@ class PanoramaImage {
               break;
             }
             tmpImage.setPixelRgb(vert, j, gray, gray, gray);
+            tmpImage.setPixelRgb(
+                vert + panoramaWidth.toInt(), j, gray, gray, gray);
             reverse[j][vert] = CoordCH(x, y);
           }
           verAngleMax = verAngle;

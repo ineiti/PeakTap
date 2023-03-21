@@ -4,7 +4,6 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
-import 'package:pointer_interceptor/pointer_interceptor.dart';
 
 import 'map_widget.dart';
 
@@ -86,27 +85,23 @@ class WebMapState extends State<WebMap> {
   }
 
   void setPolygon(List<List<double>> poly) {
-    List<LatLng> points = [
-      const LatLng(46.5946, 6.31),
-      const LatLng(46.5946, 6.41),
-      const LatLng(46.6946, 6.41),
-      const LatLng(46.6946, 6.31),
-    ];
-
-    //initialize polygon
-    _polygon.add(Polygon(
-      // given polygonId
-      polygonId: const PolygonId('1'),
-      // initialize the list of points to display polygon
-      points: points,
-      // given color to polygon
-      fillColor: Colors.green.withOpacity(0.3),
-      // given border color to polygon
-      strokeColor: Colors.green,
-      geodesic: true,
-      // given width of border
-      strokeWidth: 4,
-    ));
+    List<LatLng> points = poly.map((e) => LatLng(e[0], e[1])).toList();
+    setState(() {
+      //initialize polygon
+      _polygon.add(Polygon(
+        // given polygonId
+        polygonId: const PolygonId('1'),
+        // initialize the list of points to display polygon
+        points: points,
+        // given color to polygon
+        fillColor: Colors.green.withOpacity(0.3),
+        // given border color to polygon
+        strokeColor: Colors.green,
+        geodesic: true,
+        // given width of border
+        strokeWidth: 4,
+      ));
+    });
   }
 
   @override
@@ -116,6 +111,29 @@ class WebMapState extends State<WebMap> {
     widget.toMap.listen((event) {
       event.isLocationPOI((loc) {
         setPOI(LatLng(loc[0], loc[1]));
+      });
+      event.isViewAngle((direction, width) {
+        var m = _markers[_markerCenter]?.position;
+        if (m != null) {
+          var x = m.latitude, y = m.longitude;
+          var s = 0.1,
+              start = direction - width / 2,
+              stop = direction + width / 2;
+          setPolygon([
+            [x, y],
+            [x + s * cos(start), y + s * sin(start)],
+            [x + s * cos(stop), y + s * sin(stop)],
+            [x, y]
+          ]);
+        }
+      });
+      event.isHorizon((horizon) {
+        var m = _markers[_markerCenter]?.position;
+        if (m != null) {
+          horizon.insert(0, [m.latitude, m.longitude]);
+          horizon.add([m.latitude, m.longitude]);
+          setPolygon(horizon);
+        }
       });
     });
   }

@@ -10,12 +10,15 @@ enum LocationUsage {
   none,
   viewPoint,
   pointOfInterest,
+  viewAngle,
 }
 
 class MapParams {
   List<double>? location;
   LocationUsage usage = LocationUsage.none;
   bool? setupFinish;
+  List<double>? viewAngle;
+  List<List<double>>? horizon;
 
   void isLocation(LocationUsage u, void Function(List<double> loc) useIt) {
     if (location != null && usage == u) {
@@ -37,6 +40,18 @@ class MapParams {
     }
   }
 
+  void isViewAngle(void Function(double direction, double width) useIt) {
+    if (viewAngle?.length == 2) {
+      useIt(viewAngle![0], viewAngle![1]);
+    }
+  }
+
+  void isHorizon(void Function(List<List<double>>) useIt){
+    if (horizon != null){
+      useIt(horizon!);
+    }
+  }
+
   static MapParams sendLocation(List<double> loc, LocationUsage u) {
     return MapParams()
       ..location = loc
@@ -53,6 +68,14 @@ class MapParams {
 
   static MapParams sendSetupFinish() {
     return MapParams()..setupFinish = true;
+  }
+
+  static MapParams sendViewAngle(double direction, double width){
+    return MapParams()..viewAngle = [direction, width];
+  }
+
+  static MapParams sendHorizon(List<List<double>> h){
+    return MapParams()..horizon = h;
   }
 }
 
