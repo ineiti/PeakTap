@@ -29,7 +29,7 @@ class WebMap extends StatefulWidget implements MapWidget {
 class WebMapState extends State<WebMap> {
   Marker? marker, poi;
   int? lastClick;
-  Set<Polygon> _polygon = HashSet<Polygon>();
+  final Set<Polygon> _polygon = HashSet<Polygon>();
   final Map<MarkerId, Marker> _markers = {};
   final _markerCenter = const MarkerId('0');
   final _markerView = const MarkerId('1');

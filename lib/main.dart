@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:mountain_panorama/panorama/panorama.dart';
 import 'map_widget/map_widget.dart';
 import 'panorama_widget.dart';
 
@@ -19,7 +18,7 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
-      home: MyHomePage(title: 'Showing Mountain Panoramas'),
+      home: const MyHomePage(title: 'Showing Mountain Panoramas'),
     );
   }
 }
@@ -75,7 +74,7 @@ class _MyHomePageState extends State<MyHomePage> {
                   'You are currently here:',
                 ),
                 Text(
-                  '$_position',
+                  _position,
                   style: Theme.of(context).textTheme.headlineMedium,
                 ),
               ]),

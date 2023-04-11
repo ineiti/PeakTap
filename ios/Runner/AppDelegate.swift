@@ -1,6 +1,10 @@
 import UIKit
 import Flutter
 
+NSString* mapsApiKey = [[NSProcessInfo processInfo] environment[@"MAPS_API_KEY"];
+
+[GMSServices provideAPIKey:mapsApiKey];
+
 @UIApplicationMain
 @objc class AppDelegate: FlutterAppDelegate {
   override func application(
