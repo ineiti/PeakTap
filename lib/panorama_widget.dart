@@ -2,7 +2,7 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-import 'map_widget/map_widget.dart';
+import 'map_widget/map_params.dart';
 import 'panorama/panorama.dart';
 
 class Panorama extends StatefulWidget {
@@ -16,7 +16,7 @@ class Panorama extends StatefulWidget {
 }
 
 class PanoramaState extends State<Panorama> {
-  var empty = Image.asset("empty.png");
+  var empty = Image.asset("assets/empty.png");
   PanoramaCH? ch;
   PanoramaImage? pi;
   final GlobalKey _widgetKey = GlobalKey();

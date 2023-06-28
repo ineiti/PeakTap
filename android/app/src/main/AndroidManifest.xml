@@ -1,16 +1,15 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="blue.gasser.mountain_panorama">
+   <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+   <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
    <application
         android:label="mountain_panorama"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
-
-       <!-- TODO: Add your Google Maps API key here -->
        <meta-data android:name="com.google.android.geo.API_KEY"
-           android:value="AIzaSyDFRU7tlom_dQdnpMaW0jgIxssh3XX-IC0"/>
-<!--           android:value="${mapsApiKey}"/>-->
+           android:value="AIzaSyBFme2iidvGCgbef_LCGLi5L7KYmMcPUc8"/>
 
-       <activity
+        <activity
             android:name=".MainActivity"
             android:exported="true"
             android:launchMode="singleTop"

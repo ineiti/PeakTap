@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'map_widget/map_params.dart';
 import 'map_widget/map_widget.dart';
 import 'panorama_widget.dart';
 
@@ -71,7 +72,7 @@ class _MyHomePageState extends State<MyHomePage> {
             Center(
               child: Column(children: <Widget>[
                 const Text(
-                  'You are currently here:',
+                  'You are currently here :',
                 ),
                 Text(
                   _position,
@@ -82,7 +83,8 @@ class _MyHomePageState extends State<MyHomePage> {
             Expanded(
               // height: 500,
               // width: 500,
-              child: MapWidget(toMap.stream, fromMap.sink, origin),
+              child: getMapWidget(toMap.stream, fromMap.sink, origin),
+              // child: MapSample()
             ),
             Expanded(
               child: SizedBox(

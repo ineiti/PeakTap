@@ -1,5 +1,5 @@
 name: mountain_panorama
-description: Showing a nice mountain panorama
+description: A new Flutter project.
 # The following line prevents the package from being accidentally published to
 # pub.dev using `flutter pub publish`. This is preferred for private packages.
 publish_to: 'none' # Remove this line if you wish to publish to pub.dev
@@ -19,7 +19,7 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 version: 1.0.0+1
 
 environment:
-  sdk: '>=2.19.2 <3.0.0'
+  sdk: '>=2.19.5 <3.0.0'
 
 # Dependencies specify other packages that your package needs in order to work.
 # To automatically upgrade your package dependencies to the latest versions
@@ -35,8 +35,11 @@ dependencies:
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.2
-  google_maps_flutter: ^2.2.4
-  google_maps_flutter_web: ^0.4.0+6
+
+  flutter_map: ^5.0.0
+  latlong2: ^0.9.0
+  geolocator: ^9.0.2
+
   image: ^4.0.15
 
 dev_dependencies:
@@ -62,6 +65,7 @@ flutter:
   uses-material-design: true
 
   # To add assets to your application, add an assets section, like this:
+  # assets:
   assets:
     - assets/swisstopo.asc
     - assets/empty.png
