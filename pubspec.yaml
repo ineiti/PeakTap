@@ -69,6 +69,8 @@ flutter:
   assets:
     - assets/swisstopo.asc
     - assets/empty.png
+    - assets/pin.png
+    - assets/binoculars.png
   #   - images/a_dot_burr.jpeg
   #   - images/a_dot_ham.jpeg
 

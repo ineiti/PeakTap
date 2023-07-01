@@ -22,6 +22,10 @@ Finally, none of the apps I visited lets you show the view from a place you choo
 
 ## Next steps
 
+When scrolling on an android device:
+- scrolling also adds the POI
+- tapping for a POI also scrolls, and thus hides the zoom
+
 I would like to implement the following:
 
 - using another dataset which covers the whole earth

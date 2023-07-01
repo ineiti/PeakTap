@@ -43,12 +43,16 @@ class MapWidgetState extends State<MapWidget> {
   @override
   Widget build(BuildContext context) {
     var markers = [
-      Marker(point: _markerCenter!, builder: (context) => const FlutterLogo())
+      Marker(
+          point: _markerCenter!,
+          builder: (context) =>
+              const Image(image: AssetImage('assets/pin.png'))),
     ];
     if (_markerPOI != null) {
       markers.add(Marker(
         point: _markerPOI!,
-        builder: (context) => const ColoredBox(color: Colors.black),
+        builder: (context) => const Image(image: AssetImage('assets/binoculars.png')),
+        // builder: (context) => const ColoredBox(color: Colors.black),
       ));
     }
     return FlutterMap(
@@ -108,6 +112,7 @@ class MapWidgetState extends State<MapWidget> {
     setState(() {
       //initialize polygon
       _polygon.clear();
+      _markerPOI = null;
       _polygon.addAll(poly.map((e) => LatLng(e[0], e[1])).toList());
       var cz =
           mapController.centerZoomFitBounds(LatLngBounds.fromPoints(_polygon));

@@ -21,6 +21,9 @@ class PanoramaState extends State<Panorama> {
   PanoramaImage? pi;
   final GlobalKey _widgetKey = GlobalKey();
   final imgHeight = 256;
+  final tapTime = 200;
+  TapDownDetails? tapPos;
+  int? down;
 
   @override
   Widget build(BuildContext context) {
@@ -34,15 +37,21 @@ class PanoramaState extends State<Panorama> {
     }
     return GestureDetector(
         onTapDown: (tap) {
-          var gps = pi?.toGPS(tap.localPosition);
-          if (gps != null) {
-            widget.fromPanorama.add(MapParams.sendLocationPOI(gps.toList()));
+          tapPos = tap;
+          down = DateTime.now().millisecondsSinceEpoch;
+        },
+        onTapUp: (tap) {
+          if (DateTime.now().millisecondsSinceEpoch - down! <= tapTime) {
+            var gps = pi?.toGPS(tapPos!.localPosition);
+            if (gps != null) {
+              widget.fromPanorama.add(MapParams.sendLocationPOI(gps.toList()));
+            }
           }
         },
         child: Listener(
           key: _widgetKey,
           onPointerMove: (update) {
-            _updateOffset(-update.delta.dx);
+              _updateOffset(-update.delta.dx);
           },
           onPointerSignal: (signal) {
             if (signal is PointerScrollEvent) {
@@ -54,9 +63,11 @@ class PanoramaState extends State<Panorama> {
   }
 
   void _updateOffset(double dx) {
-    setState(() {
-      pi?.updateOffset(dx);
-    });
+    if (DateTime.now().millisecondsSinceEpoch - down! > tapTime) {
+      setState(() {
+        pi?.updateOffset(dx);
+      });
+    }
   }
 
   @override
