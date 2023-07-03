@@ -2,11 +2,11 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:flutter/foundation.dart';
-import 'package:geoimage/geoimage.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:http/http.dart' as http;
-import 'package:image/image.dart';
 import 'package:archive/archive.dart';
+
+import 'tiffimage.dart';
 
 class HeightProfileProvider {
   static const String _tilesBoxName = 'srtm_tiles';
@@ -22,17 +22,14 @@ class HeightProfileProvider {
 
   Future<int> getHeight(double latitude, double longitude) async {
     final tileData = await _getTile(latitude, longitude);
-    final geoImage = GeoRaster.fromBytes(tileData, "test.tiff");
-    geoImage.read();
-    // final img = decodeImage(tileData);
-    print("Image is tiff (${geoImage.isTiff}): ${geoImage.getCols()} x ${geoImage.getRows()}");
+    final img = TiffImage(tileData);
     final coords = _geoToPixelCoords(latitude, longitude);
     print("Coords are: $coords");
-    var pixel = geoImage.getPixel(coords[0], coords[1]);
+    var pixel = img.readPixel(coords[0], coords[1]);
     print("Pixel is: $pixel");
-    pixel = geoImage.getPixel(coords[0], coords[1] + 10);
+    pixel = img.readPixel(coords[0], coords[1] + 10);
     print("Pixel is: $pixel");
-    return _doubleToElevation(pixel);
+    return _pixelToElevation(pixel);
     // return 0;
   }
 
