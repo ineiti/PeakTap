@@ -34,7 +34,7 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  String _position = "Unknown";
+  String _position = "Searching GPS";
   var toMap = StreamController<MapParams>.broadcast();
   var fromMap = StreamController<MapParams>();
   var toPanorama = StreamController<MapParams>.broadcast();
@@ -84,7 +84,6 @@ class _MyHomePageState extends State<MyHomePage> {
               // height: 500,
               // width: 500,
               child: getMapWidget(toMap.stream, fromMap.sink, origin),
-              // child: MapSample()
             ),
             Expanded(
               child: SizedBox(

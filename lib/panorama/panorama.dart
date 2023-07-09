@@ -1,7 +1,7 @@
 import 'dart:async' show Future;
-import 'dart:typed_data';
 import 'dart:ui' as ui;
 import 'dart:math' show atan, cos, log, max, min, sin;
+import 'dart:ui';
 
 import 'package:image/image.dart' as img;
 import 'package:latlong2/latlong.dart';
@@ -10,41 +10,16 @@ import 'package:mountain_panorama/elevation/elevation.dart';
 class PanoramaImage {
   final List<List<LatLng?>> _reverse;
   ui.Image map;
-  double offset;
-  ui.Size _size;
-  bool _changed = true;
 
-  PanoramaImage(double? off,
-      {required this.map, required List<List<LatLng?>> reverse})
-      : _reverse = reverse,
-        _size = ui.Size(map.width.toDouble(), map.height.toDouble()),
-        offset = off ?? -1;
+  PanoramaImage(this.map, this._reverse);
 
-  int height() {
-    return _reverse.length;
-  }
-
-  int width() {
-    return _reverse[0].length;
-  }
-
-  bool changed() {
-    var c = _changed;
-    _changed = false;
-    return c;
-  }
-
-  double viewDirection() => _imgCenterView() * 2 * pi / width();
-
-  double viewAngle() => _imgViewWidth() * 2 * pi / width();
-
-  List<LatLng> getHorizon() {
+  List<LatLng> getHorizon(Size size, double offset) {
     List<LatLng> horizon = [];
-    var imgOffset = offset ~/ _imgViewFactor();
-    var end = ((imgOffset + _imgViewWidth()) % width()).toInt();
+    var imgOffset = offset ~/ _imgViewFactor(size);
+    var end = ((imgOffset + _imgViewWidth(size)) % width()).toInt();
     for (var dx = imgOffset % width(); dx != end; dx = (dx + 1) % width()) {
       // print("dx: $dx - $offset - ${width()}");
-      for (var y = 0; y < height(); y++) {
+      for (var y = 0; y < _height(); y++) {
         // print("y: $y");
         if (dx >= _reverse[y].length) {
           print("Dx overflow: $dx - ${width()} - ${_reverse[y].length}");
@@ -59,77 +34,54 @@ class PanoramaImage {
     return horizon;
   }
 
-  void updateOffset(double dx) {
-    _changed = true;
-    offset += dx;
-    offset %= width() * _imgViewFactor();
-  }
-
-  void setSize(ui.Size s) {
-    if (_size != s) {
-      _changed = true;
-    } else {}
-    _size = s;
-    if (offset == -1) {
-      offset = width() * _imgViewFactor() / 2;
-    }
-  }
-
-  LatLng? toLatLng(ui.Offset pos) {
-    final mapX = ((offset + pos.dx)) ~/ _imgViewFactor() % width();
-    final mapY = pos.dy ~/ _imgViewFactor();
+  LatLng? toLatLng(Size size, Offset offset, ui.Offset pos) {
+    final mapX = ((offset.dx + pos.dx)) ~/ _imgViewFactor(size) % width();
+    final mapY = pos.dy ~/ _imgViewFactor(size);
     return _reverse[mapY][mapX];
   }
 
-  double _imgViewFactor() => _size.height / height();
-
-  double _imgViewWidth() => _size.width / _imgViewFactor();
-
-  double _imgCenterView() => _imgViewWidth() / 2 + offset / _imgViewFactor();
-
-  ui.Rect getViewRect() {
+  ui.Rect getViewRect(Size size, Offset offset) {
     var r = ui.Rect.fromCenter(
-        center: ui.Offset(_imgCenterView(), height() / 2),
-        width: _imgViewWidth(),
-        height: height().toDouble());
+        center: ui.Offset(_imgCenterView(size, offset), _height() / 2),
+        width: _imgViewWidth(size),
+        height: _height().toDouble());
     return r;
   }
+
+  int width() {
+    return _reverse[0].length;
+  }
+
+  int _height() {
+    return _reverse.length;
+  }
+
+  double _imgViewFactor(Size size) => size.height / _height();
+
+  double _imgViewWidth(Size size) => size.width / _imgViewFactor(size);
+
+  double _imgCenterView(Size size, Offset offset) =>
+      _imgViewWidth(size) / 2 + offset.dx / _imgViewFactor(size);
 }
 
 class PanoramaImageBuilder {
   HeightProfileProvider hp;
-  LatLng location;
-  img.Image tmpImage;
-  List<List<LatLng?>> reverse;
 
   double horStart = 0, horEnd = 360;
   double verStart = -5, verEnd = 25;
 
-  PanoramaImageBuilder(this.hp, this.location, int height)
-      : tmpImage = img.Image(width: height * 12 * 2, height: height),
-        reverse = List.generate(height, (i) => List.filled(height * 12, null)) {
-  }
+  PanoramaImageBuilder(this.hp);
 
-  Uint8List getImageAsU8() {
-    return img.encodePng(tmpImage);
-  }
+  Future<PanoramaImage> drawPanorama(int height, LatLng location) async {
+    var tmpImage = img.Image(width: height * 12 * 2, height: height);
+    List<List<LatLng?>> reverse =
+        List.generate(height, (i) => List.filled(height * 12, null));
 
-  Future<PanoramaImage> getImage(double? offset) async {
-    await _drawPanorama();
-    // _drawMap();
-    // print("Returning image");
-    ui.Codec codec = await ui.instantiateImageCodec(img.encodePng(tmpImage));
-    ui.FrameInfo frameInfo = await codec.getNextFrame();
-    return PanoramaImage(map: frameInfo.image, reverse: reverse, offset);
-  }
-
-  Future<void> _drawPanorama() async {
     // print(
     //     "image is: ${tmpImage.height} at ${location.latitude}/${location.longitude}");
     var panoramaWidth = tmpImage.width / 2;
     double cellsize = 50;
     double earthRadius = 6371e3;
-    // for (var vert = 0; vert < 1; vert++) {
     for (var vert = 0; vert < panoramaWidth; vert++) {
       // print("Vertical is: $vert");
       // Get the height of the observer
@@ -184,5 +136,8 @@ class PanoramaImageBuilder {
       }
     }
     // print("Done drawing");
+    ui.Codec codec = await ui.instantiateImageCodec(img.encodePng(tmpImage));
+    ui.FrameInfo frameInfo = await codec.getNextFrame();
+    return PanoramaImage(frameInfo.image, reverse);
   }
 }

@@ -12,6 +12,7 @@ import 'tiffimage.dart';
 class HeightProfileProvider {
   final String initPath;
   final Map<String, TiffImage> _tiles = {};
+  final Map<String, bool> _downloading = {};
 
   static Future<HeightProfileProvider>  withAppDir() async {
     Directory appDocDir = await getApplicationDocumentsDirectory();
@@ -41,8 +42,20 @@ class HeightProfileProvider {
     if (tileFile.existsSync()) {
       tileData = tileFile.readAsBytesSync();
     } else {
-      tileData = await _downloadTile(tileKey);
-      tileFile.writeAsBytesSync(tileData);
+      if (_downloading.containsKey(tileKey)){
+        while (_downloading[tileKey]!){
+          print("Waiting for download to finish");
+          sleep(const Duration(seconds: 1));
+        }
+        print("Download finished");
+        return _getTile(pos);
+      } else {
+        _downloading[tileKey] = true;
+        tileData = await _downloadTile(tileKey);
+        tileFile.writeAsBytesSync(tileData);
+        _downloading[tileKey] = false;
+      }
+      _downloading[tileKey] = false;
     }
     _tiles.putIfAbsent(tileKey, () => TiffImage(tileData!));
 

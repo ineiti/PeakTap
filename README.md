@@ -20,19 +20,28 @@ are usually not displayed.
 And if you wanted to see a specific mountain, there was no feature to do so.
 Finally, none of the apps I visited lets you show the view from a place you choose.
 
-## Next steps
-
-When scrolling on an android device:
-- scrolling also adds the POI
-- tapping for a POI also scrolls, and thus hides the zoom
+# Next steps
 
 I would like to implement the following:
 
+- when clicking on the panorama, zoom in the top of the chosen area,
+  put a cross in the middle, and let the user pan around
+- correctly place pin
+- load tiles from https://map.ineiti.ch
+- zoom the panorama
+- when starting up, there is often a moment when the polygon seems to have two points
 - having some buttons to enable/disable features
 - showing the panorama in the direction the phone points
 
 Other ideas are welcome...
 
-## Done
+## CHANGELOG
 
-- 2023-07-09 - using another dataset which covers the whole earth
+- 2023-07
+  - avoid loading twice the same tile
+  - show "loading" texts
+
+- 2023-07-09 
+  - using another dataset which covers the whole earth
+  - scrolling also adds the POI
+  - tapping for a POI also scrolls, and thus hides the zoom

@@ -34,10 +34,6 @@ class MapWidgetState extends State<MapWidget> {
   LatLng? _markerCenter;
   LatLng? _markerPOI;
 
-  // final Map<MarkerId, Marker> _markers = {};
-  // final _markerCenter = const MarkerId('0');
-  // final _markerView = const MarkerId('1');
-
   final mapController = MapController();
 
   @override
@@ -51,8 +47,8 @@ class MapWidgetState extends State<MapWidget> {
     if (_markerPOI != null) {
       markers.add(Marker(
         point: _markerPOI!,
-        builder: (context) => const Image(image: AssetImage('assets/binoculars.png')),
-        // builder: (context) => const ColoredBox(color: Colors.black),
+        builder: (context) =>
+            const Image(image: AssetImage('assets/binoculars.png')),
       ));
     }
     return FlutterMap(
@@ -84,7 +80,6 @@ class MapWidgetState extends State<MapWidget> {
           markers: markers,
         ),
       ],
-      // markers: _markers.values.toSet(),
     );
   }
 
@@ -115,8 +110,7 @@ class MapWidgetState extends State<MapWidget> {
       _polygon.addAll(poly);
       var bounds = LatLngBounds.fromPoints(_polygon);
       // print("Bounds are: ${bounds.northWest} / ${bounds.southEast}");
-      var cz =
-          mapController.centerZoomFitBounds(bounds);
+      var cz = mapController.centerZoomFitBounds(bounds);
       mapController.move(cz.center, cz.zoom);
     });
   }
@@ -140,7 +134,8 @@ class MapWidgetState extends State<MapWidget> {
       });
     });
 
-    _determinePosition().then((position) async {
+    Future.microtask(() async {
+      var position = await _determinePosition();
       await _onMapTap(null, LatLng(position.latitude, position.longitude));
     });
   }

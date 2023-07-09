@@ -11,8 +11,6 @@ import 'package:latlong2/latlong.dart';
 // It checks as many tags as necessary to make sure it is not fed a different
 // TIFF file type.
 // Unfortunately it cannot decode any non-SRTM files.
-// And as of July 4th 2023, the srtm website doesn't have a valid certificate
-// anymore, so tiles cannot be downloaded without ignoring the certificate error.
 
 class TiffImage {
   late ByteData _byteData;
