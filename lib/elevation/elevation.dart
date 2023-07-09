@@ -1,43 +1,52 @@
-import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:flutter/foundation.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:archive/archive.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:universal_io/io.dart';
 
 import 'tiffimage.dart';
 
-// TODO: make cache of tiles so the TIFF files doesn't need to be read
-// every time a point is asked...
-
 class HeightProfileProvider {
-  static const String _tilesBoxName = 'srtm_tiles';
-  late Box _tilesBox;
   final String initPath;
+  final Map<String, TiffImage> _tiles = {};
+
+  static Future<HeightProfileProvider>  withAppDir() async {
+    Directory appDocDir = await getApplicationDocumentsDirectory();
+    var appDocPath = appDocDir.path;
+
+    return HeightProfileProvider(initPath: appDocPath);
+  }
 
   HeightProfileProvider({required this.initPath});
 
-  Future<void> initialize() async {
-    Hive.init(initPath);
-    _tilesBox = await Hive.openBox(_tilesBoxName);
-  }
-
   Future<int> getHeight(LatLng pos) async {
-    final tileData = await _getTile(pos);
-    final img = TiffImage(tileData);
-    return img.readPixel(pos);
+    final tileImg = await _getTile(pos);
+    return tileImg.readPixel(pos);
   }
 
-  Future<Uint8List> _getTile(LatLng pos) async {
+  Future<TiffImage> _getTile(LatLng pos) async {
     final tileKey = _getTileKey(pos);
 
-    // print("tile key is: $tileKey");
-    if (_tilesBox.containsKey(tileKey)) {
-      return _tilesBox.get(tileKey);
+    if (_tiles.containsKey(tileKey)) {
+      return _tiles[tileKey]!;
     }
 
-    return await _downloadTile(tileKey);
+    print("tile key is: $tileKey");
+
+    Uint8List? tileData;
+    var tileFile = File("$initPath/$tileKey.tiff");
+    if (tileFile.existsSync()) {
+      tileData = tileFile.readAsBytesSync();
+    } else {
+      tileData = await _downloadTile(tileKey);
+      tileFile.writeAsBytesSync(tileData);
+    }
+    _tiles.putIfAbsent(tileKey, () => TiffImage(tileData!));
+
+    return _getTile(pos);
   }
 
   String _getTileKey(LatLng pos) {
@@ -50,24 +59,28 @@ class HeightProfileProvider {
     // Magic calculation when looking at https://srtm.csi.cgiar.org/download
     // And it seems that the srtm website mixed up latitude and longitude, which
     // seems very strange for that project.
-    final url =
-        'https://srtm.csi.cgiar.org/wp-content/uploads/files/srtm_5x5/TIFF/$dataKey.zip';
-    // print("Downloading $url");
+    final url = Uri.https('srtm.csi.cgiar.org',
+        '/wp-content/uploads/files/srtm_5x5/TIFF/$dataKey.zip');
+    print("Downloading $url");
     var client = HttpClient();
     client.badCertificateCallback = (_, __, ___) => true;
-    final request = await client.getUrl(Uri.parse(url));
+    final request = await client.getUrl(url);
+    // request.headers.add("access-control-allow-origin", "*");
+    // request.headers.add("Content-Type", "application/json");
+    // request.headers.add("Accept", "*/*");
+    // print("Header is: ${request.headers}");
     final response = await request.close();
-    // print("Downloaded, status is: ${response.statusCode}");
+    print("Downloaded $url, status is: ${response.statusCode}");
 
     if (response.statusCode == 200) {
+      print("Unzipping");
       final zipBytes = await consolidateHttpClientResponseBytes(response);
       final archive = ZipDecoder().decodeBytes(zipBytes);
 
-      // print("Searching files");
+      print("Searching files");
       for (final file in archive) {
-        // print("Found file ${file.name}");
+        print("Found file ${file.name}");
         if (file.isFile && file.name.endsWith('.tif')) {
-          await _tilesBox.put(dataKey, file.content);
           return file.content;
         }
       }

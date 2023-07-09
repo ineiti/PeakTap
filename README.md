@@ -28,8 +28,11 @@ When scrolling on an android device:
 
 I would like to implement the following:
 
-- using another dataset which covers the whole earth
 - having some buttons to enable/disable features
 - showing the panorama in the direction the phone points
 
 Other ideas are welcome...
+
+## Done
+
+- 2023-07-09 - using another dataset which covers the whole earth

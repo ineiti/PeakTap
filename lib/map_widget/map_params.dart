@@ -1,3 +1,5 @@
+import 'package:latlong2/latlong.dart';
+
 enum LocationUsage {
   none,
   viewPoint,
@@ -9,23 +11,23 @@ void debug(String s){
 }
 
 class MapParams {
-  List<double>? location;
+  LatLng? location;
   LocationUsage usage = LocationUsage.none;
   bool? setupFinish;
-  List<List<double>>? horizon;
+  List<LatLng>? horizon;
 
-  void isLocation(LocationUsage u, void Function(List<double> loc) useIt) {
+  void isLocation(LocationUsage u, void Function(LatLng loc) useIt) {
     if (location != null && usage == u) {
       debug("IsLocation $u");
       useIt(location!);
     }
   }
 
-  void isLocationViewpoint(void Function(List<double> loc) useIt) {
+  void isLocationViewpoint(void Function(LatLng loc) useIt) {
     isLocation(LocationUsage.viewPoint, useIt);
   }
 
-  void isLocationPOI(void Function(List<double> loc) useIt) {
+  void isLocationPOI(void Function(LatLng loc) useIt) {
     isLocation(LocationUsage.pointOfInterest, useIt);
   }
 
@@ -36,25 +38,25 @@ class MapParams {
     }
   }
 
-  void isHorizon(void Function(List<List<double>>) useIt){
+  void isHorizon(void Function(List<LatLng>) useIt){
     if (horizon != null){
       debug("IsHorizon");
       useIt(horizon!);
     }
   }
 
-  static MapParams sendLocation(List<double> loc, LocationUsage u) {
+  static MapParams sendLocation(LatLng loc, LocationUsage u) {
     debug("SendLocation $u");
     return MapParams()
       ..location = loc
       ..usage = u;
   }
 
-  static MapParams sendLocationViewpoint(List<double> loc) {
+  static MapParams sendLocationViewpoint(LatLng loc) {
     return sendLocation(loc, LocationUsage.viewPoint);
   }
 
-  static MapParams sendLocationPOI(List<double> loc) {
+  static MapParams sendLocationPOI(LatLng loc) {
     return sendLocation(loc, LocationUsage.pointOfInterest);
   }
 
@@ -63,7 +65,7 @@ class MapParams {
     return MapParams()..setupFinish = true;
   }
 
-  static MapParams sendHorizon(List<List<double>> h){
+  static MapParams sendHorizon(List<LatLng> h){
     debug("SendHorizon");
     return MapParams()..horizon = h;
   }

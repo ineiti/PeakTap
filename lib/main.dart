@@ -50,7 +50,7 @@ class _MyHomePageState extends State<MyHomePage> {
         toPanorama.add(event);
         setState(() {
           _position =
-              "${loc[0].toStringAsFixed(4)} / ${loc[1].toStringAsFixed(4)}";
+              "${loc.latitude.toStringAsFixed(4)} / ${loc.longitude.toStringAsFixed(4)}";
         });
       });
     });

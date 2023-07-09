@@ -96,8 +96,7 @@ class MapWidgetState extends State<MapWidget> {
       _polygon.clear();
     });
     Future.delayed(const Duration(milliseconds: 150), () {
-      widget.fromMap.add(MapParams.sendLocationViewpoint(
-          [newPosition.latitude.toDouble(), newPosition.longitude.toDouble()]));
+      widget.fromMap.add(MapParams.sendLocationViewpoint(newPosition));
     });
   }
 
@@ -108,14 +107,16 @@ class MapWidgetState extends State<MapWidget> {
     });
   }
 
-  void setPolygon(List<List<double>> poly) {
+  void setPolygon(List<LatLng> poly) {
     setState(() {
       //initialize polygon
       _polygon.clear();
       _markerPOI = null;
-      _polygon.addAll(poly.map((e) => LatLng(e[0], e[1])).toList());
+      _polygon.addAll(poly);
+      var bounds = LatLngBounds.fromPoints(_polygon);
+      // print("Bounds are: ${bounds.northWest} / ${bounds.southEast}");
       var cz =
-          mapController.centerZoomFitBounds(LatLngBounds.fromPoints(_polygon));
+          mapController.centerZoomFitBounds(bounds);
       mapController.move(cz.center, cz.zoom);
     });
   }
@@ -127,13 +128,13 @@ class MapWidgetState extends State<MapWidget> {
 
     widget.toMap.listen((event) {
       event.isLocationPOI((loc) {
-        _setPOI(LatLng(loc[0], loc[1]));
+        _setPOI(loc);
       });
       event.isHorizon((horizon) {
         if (_markerCenter != null) {
           final m = _markerCenter!;
-          horizon.insert(0, [m.latitude, m.longitude]);
-          horizon.add([m.latitude, m.longitude]);
+          horizon.insert(0, m);
+          horizon.add(m);
           setPolygon(horizon);
         }
       });

@@ -52,11 +52,13 @@ class TiffImage {
         pos.latitude <= _image.degreeTop - 5 ||
         pos.longitude < _image.degreeLeft ||
         pos.longitude >= _image.degreeLeft + 5) {
+      print(
+          "Pos is: $pos, image top left is: (${_image.degreeTop}, ${_image.degreeLeft})");
       throw Exception("Position outside of this tile");
     }
 
-    int x = ((pos.longitude - _image.degreeLeft) / 5.0 * _image.width).round();
-    int y = ((_image.degreeTop - pos.latitude) / 5.0 * _image.height).round();
+    int x = ((pos.longitude - _image.degreeLeft) / 5.0 * _image.width).floor();
+    int y = ((_image.degreeTop - pos.latitude) / 5.0 * _image.height).floor();
     int strip = y ~/ _image.rowsPerStrip;
     int stripLine = y % _image.rowsPerStrip;
 
@@ -179,7 +181,8 @@ class IFD {
         case IFD.tagStripOffsets:
           assert(type == IFD.typeLong);
           for (int i = 0; i < count; i++) {
-            ret.stripOffsets.add(data.getUint32(offsetValue + i * 4, endianness));
+            ret.stripOffsets
+                .add(data.getUint32(offsetValue + i * 4, endianness));
           }
           break;
         case IFD.tagRowsPerStrip:
@@ -189,7 +192,8 @@ class IFD {
         case IFD.tagStripByteCounts:
           assert(type == IFD.typeLong);
           for (int i = 0; i < count; i++) {
-            ret.stripByteCounts.add(data.getUint32(offsetValue + i * 4, endianness));
+            ret.stripByteCounts
+                .add(data.getUint32(offsetValue + i * 4, endianness));
           }
           break;
         // This can be used to debug new tags, like the Geotags found at the end.

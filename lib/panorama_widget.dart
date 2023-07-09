@@ -1,6 +1,7 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:mountain_panorama/elevation/elevation.dart';
 
 import 'map_widget/map_params.dart';
 import 'panorama/panorama.dart';
@@ -17,7 +18,7 @@ class Panorama extends StatefulWidget {
 
 class PanoramaState extends State<Panorama> {
   var empty = Image.asset("assets/empty.png");
-  PanoramaCH? ch;
+  HeightProfileProvider? heightProfile;
   PanoramaImage? pi;
   final GlobalKey _widgetKey = GlobalKey();
   final imgHeight = 256;
@@ -42,16 +43,16 @@ class PanoramaState extends State<Panorama> {
         },
         onTapUp: (tap) {
           if (DateTime.now().millisecondsSinceEpoch - down! <= tapTime) {
-            var gps = pi?.toGPS(tapPos!.localPosition);
-            if (gps != null) {
-              widget.fromPanorama.add(MapParams.sendLocationPOI(gps.toList()));
+            var pos = pi?.toLatLng(tapPos!.localPosition);
+            if (pos != null) {
+              widget.fromPanorama.add(MapParams.sendLocationPOI(pos));
             }
           }
         },
         child: Listener(
           key: _widgetKey,
           onPointerMove: (update) {
-              _updateOffset(-update.delta.dx);
+            _updateOffset(-update.delta.dx);
           },
           onPointerSignal: (signal) {
             if (signal is PointerScrollEvent) {
@@ -73,14 +74,12 @@ class PanoramaState extends State<Panorama> {
   @override
   void initState() {
     super.initState();
-    if (ch == null) {
-      PanoramaCH.readASC().then((lines) {
-        ch = PanoramaCH(lines);
-
+    if (heightProfile == null) {
+      HeightProfileProvider.withAppDir().then((hp) {
+        heightProfile = hp;
         widget.toPanorama.listen((event) {
           event.isLocationViewpoint((loc) {
-            var locCH = CoordGPS.fromList(loc).toCH();
-            PanoramaImageBuilder(ch!, locCH, imgHeight)
+            PanoramaImageBuilder(heightProfile!, loc, imgHeight)
                 .getImage(pi?.offset)
                 .then((pImage) {
               setState(() {
@@ -88,9 +87,9 @@ class PanoramaState extends State<Panorama> {
               });
             });
           });
-        });
 
-        widget.fromPanorama.add(MapParams.sendSetupFinish());
+          widget.fromPanorama.add(MapParams.sendSetupFinish());
+        });
       });
     }
   }
