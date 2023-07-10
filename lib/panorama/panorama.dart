@@ -1,68 +1,10 @@
 import 'dart:async' show Future;
 import 'dart:ui' as ui;
 import 'dart:math' show atan, cos, log, max, min, sin;
-import 'dart:ui';
 
 import 'package:image/image.dart' as img;
 import 'package:latlong2/latlong.dart';
 import 'package:mountain_panorama/elevation/elevation.dart';
-
-class PanoramaImage {
-  final List<List<LatLng?>> _reverse;
-  ui.Image map;
-
-  PanoramaImage(this.map, this._reverse);
-
-  List<LatLng> getHorizon(Size size, double offset) {
-    List<LatLng> horizon = [];
-    var imgOffset = offset ~/ _imgViewFactor(size);
-    var end = ((imgOffset + _imgViewWidth(size)) % width()).toInt();
-    for (var dx = imgOffset % width(); dx != end; dx = (dx + 1) % width()) {
-      // print("dx: $dx - $offset - ${width()}");
-      for (var y = 0; y < _height(); y++) {
-        // print("y: $y");
-        if (dx >= _reverse[y].length) {
-          print("Dx overflow: $dx - ${width()} - ${_reverse[y].length}");
-        }
-        var c = _reverse[y][dx.toInt()];
-        if (c != null) {
-          horizon.add(c);
-          break;
-        }
-      }
-    }
-    return horizon;
-  }
-
-  LatLng? toLatLng(Size size, Offset offset, ui.Offset pos) {
-    final mapX = ((offset.dx + pos.dx)) ~/ _imgViewFactor(size) % width();
-    final mapY = pos.dy ~/ _imgViewFactor(size);
-    return _reverse[mapY][mapX];
-  }
-
-  ui.Rect getViewRect(Size size, Offset offset) {
-    var r = ui.Rect.fromCenter(
-        center: ui.Offset(_imgCenterView(size, offset), _height() / 2),
-        width: _imgViewWidth(size),
-        height: _height().toDouble());
-    return r;
-  }
-
-  int width() {
-    return _reverse[0].length;
-  }
-
-  int _height() {
-    return _reverse.length;
-  }
-
-  double _imgViewFactor(Size size) => size.height / _height();
-
-  double _imgViewWidth(Size size) => size.width / _imgViewFactor(size);
-
-  double _imgCenterView(Size size, Offset offset) =>
-      _imgViewWidth(size) / 2 + offset.dx / _imgViewFactor(size);
-}
 
 class PanoramaImageBuilder {
   HeightProfileProvider hp;
@@ -140,4 +82,10 @@ class PanoramaImageBuilder {
     ui.FrameInfo frameInfo = await codec.getNextFrame();
     return PanoramaImage(frameInfo.image, reverse);
   }
+}
+
+class PanoramaImage {
+  ui.Image map;
+  List<List<LatLng?>> reverse;
+  PanoramaImage(this.map, this.reverse);
 }

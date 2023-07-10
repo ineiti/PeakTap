@@ -32,6 +32,7 @@ I would like to implement the following:
 - when starting up, there is often a moment when the polygon seems to have two points
 - having some buttons to enable/disable features
 - showing the panorama in the direction the phone points
+- BUG: when panning through the offset 0 to the left, there is a short hubbub.
 
 Other ideas are welcome...
 
