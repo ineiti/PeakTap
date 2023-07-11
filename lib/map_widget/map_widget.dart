@@ -102,16 +102,21 @@ class MapWidgetState extends State<MapWidget> {
     });
   }
 
-  void setPolygon(List<LatLng> poly) {
+  void _setPolygon(List<LatLng> poly) {
     setState(() {
       //initialize polygon
       _polygon.clear();
-      _markerPOI = null;
       _polygon.addAll(poly);
+    });
+  }
+
+  void _fitHorizon(){
+    setState((){
       var bounds = LatLngBounds.fromPoints(_polygon);
       // print("Bounds are: ${bounds.northWest} / ${bounds.southEast}");
       var cz = mapController.centerZoomFitBounds(bounds);
       mapController.move(cz.center, cz.zoom);
+      _markerPOI = null;
     });
   }
 
@@ -129,8 +134,11 @@ class MapWidgetState extends State<MapWidget> {
           final m = _markerCenter!;
           horizon.insert(0, m);
           horizon.add(m);
-          setPolygon(horizon);
+          _setPolygon(horizon);
         }
+      });
+      event.isFitHorizon(() {
+        _fitHorizon();
       });
     });
 

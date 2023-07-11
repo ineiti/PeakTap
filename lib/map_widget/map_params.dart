@@ -6,6 +6,11 @@ enum LocationUsage {
   pointOfInterest,
 }
 
+enum Message {
+  fitHorizon,
+  setupFinish,
+}
+
 void debug(String s){
   // print(s);
 }
@@ -13,7 +18,7 @@ void debug(String s){
 class MapParams {
   LatLng? location;
   LocationUsage usage = LocationUsage.none;
-  bool? setupFinish;
+  Message ?message;
   List<LatLng>? horizon;
 
   void isLocation(LocationUsage u, void Function(LatLng loc) useIt) {
@@ -32,7 +37,7 @@ class MapParams {
   }
 
   void isSetupFinish(void Function() useIt) {
-    if (setupFinish != null) {
+    if (message == Message.setupFinish) {
       debug("IsSetupFinish");
       useIt();
     }
@@ -42,6 +47,13 @@ class MapParams {
     if (horizon != null){
       debug("IsHorizon");
       useIt(horizon!);
+    }
+  }
+
+  void isFitHorizon(void Function() useIt){
+    if (message == Message.fitHorizon){
+      debug("IsFitHorizon");
+      useIt();
     }
   }
 
@@ -62,11 +74,15 @@ class MapParams {
 
   static MapParams sendSetupFinish() {
     debug("SendSetupFinish");
-    return MapParams()..setupFinish = true;
+    return MapParams()..message = Message.setupFinish;
   }
 
   static MapParams sendHorizon(List<LatLng> h){
     debug("SendHorizon");
     return MapParams()..horizon = h;
+  }
+
+  static MapParams sendFitHorizon(){
+    return MapParams()..message = Message.fitHorizon;
   }
 }

@@ -5,42 +5,46 @@ Showing a nice mountain panorama and lets you search for anything in view:
 - lets you click in the panorama to link to the map and see what is there
 - lets you click in the map to change the viewpoint - visit other places
 
-Example screenshot:
-
-![OpenStreetMaps on top with panorama below](Screenshot_MountainPanorama.png)
-
-Currently it uses the SwissTopo data to calculate the panorama.
-
 ## Why is this better than other panorama apps?
 
-The panorama apps I tried out only showed the mountains they thought I wanted
-to see.
-Also, some mountains which are very far (like the _Mont Blanc_ as seen from _Morges_ in Switzerland)
-are usually not displayed.
-And if you wanted to see a specific mountain, there was no feature to do so.
-Finally, none of the apps I visited lets you show the view from a place you choose.
+- Allows you to see all the mountains around you, not only those the app thinks are interesting
+- Also shows very far mountains (like the _Mont Blanc_ as seen from _Morges_ in Switzerland),
+  which are often omitted in other apps
+- You can also zoom in on mountains in the foreground, or villages
+- Choose the place from which you want to see the panorama
+
+It uses worldwide elevation data from https://srtm.csi.cgiar.org/
+
+Example screenshot of showing the horizon in the map and as a panorama:
+
+![OpenStreetMaps on top with panorama below](Screenshot_mont_blanc_horizon.png)
+
+Example screenshot of zooming in on Mont Blanc:
+
+![Zoom on Mont Blanc](Screenshot_mont_blanc_zoom.png)
 
 # Next steps
 
 I would like to implement the following:
 
-- when clicking on the panorama, zoom in the top of the chosen area,
-  put a cross in the middle, and let the user pan around
-- correctly place pin
+- correctly place pin (currently it's a bit off)
 - load tiles from https://map.ineiti.ch
-- zoom the panorama
-- when starting up, there is often a moment when the polygon seems to have two points
-- having some buttons to enable/disable features
+- when starting up, there is often a moment when the polygon seems to have two points:
+this is because it still shows the old, pre-defined POI
+- having some buttons to enable/disable features:
+  - go back to GPS
+  - make mountains higher (if they're far away) / lower (if you're in the Valais)
 - showing the panorama in the direction the phone points
-- BUG: when panning through the offset 0 to the left, there is a short hubbub.
 
 Other ideas are welcome...
 
 ## CHANGELOG
 
-- 2023-07
+- 2023-07-11
   - avoid loading twice the same tile
   - show "loading" texts
+  - when clicking on the panorama, zoom in the top of the chosen area,
+  put a cross in the middle, and let the user pan around
 
 - 2023-07-09 
   - using another dataset which covers the whole earth

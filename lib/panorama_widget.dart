@@ -30,6 +30,7 @@ class PanoramaState extends State<Panorama> {
   PanoramaImageBuilder? piBuilder;
   PanoramaImage? pImage;
   _PIUI? _piUI;
+  Offset _oldOffset = Offset.zero;
   final GlobalKey _widgetKey = GlobalKey();
   final imgHeight = 256;
   final tapTime = 200;
@@ -43,8 +44,10 @@ class PanoramaState extends State<Panorama> {
       size = (_widgetKey.currentContext!.findRenderObject() as RenderBox).size;
     }
     Widget mapImage = empty;
+    var showBinoculars = false;
     if (pImage != null) {
-      _piUI ??= _PIUI(widget.fromPanorama, pImage!, size);
+      _piUI ??= _PIUI(widget.fromPanorama, pImage!, size, _oldOffset);
+      showBinoculars = _piUI!.isPOI();
       mapImage = _piUI!.getImage();
     }
     return GestureDetector(
@@ -69,7 +72,10 @@ class PanoramaState extends State<Panorama> {
               _updateOffset(signal.scrollDelta);
             }
           },
-          child: mapImage,
+          child: ClipPath(
+            clipper: Binoculars(showBinoculars),
+            child: mapImage,
+          ),
         ));
   }
 
@@ -92,6 +98,9 @@ class PanoramaState extends State<Panorama> {
           var pi = await piBuilder?.drawPanorama(imgHeight, loc);
           setState(() {
             pImage = pi;
+            if (_piUI != null) {
+              _oldOffset = _piUI!.mapOffset;
+            }
             _piUI = null;
           });
         });
@@ -101,10 +110,42 @@ class PanoramaState extends State<Panorama> {
   }
 }
 
+class Binoculars extends CustomClipper<ui.Path> {
+  final bool _binoculars;
+  final double _overlap = 0.4;
+  final double _mult = 0.9;
+
+  Binoculars(this._binoculars);
+
+  @override
+  ui.Path getClip(Size size) {
+    ui.Path path = ui.Path();
+    if (_binoculars) {
+      var width = size.width / (2 - _overlap);
+      var middle = size.height / 2;
+      path.addOval(Rect.fromCenter(
+          center: Offset(width / 2, middle),
+          width: width * _mult,
+          height: size.height * _mult));
+      path.addOval(Rect.fromCenter(
+          center: Offset(size.width - width / 2, middle),
+          width: width * _mult,
+          height: size.height * _mult));
+    } else {
+      path.addRect(Offset.zero & size);
+    }
+    return path;
+  }
+
+  @override
+  bool shouldReclip(CustomClipper<ui.Path> oldClipper) => true;
+}
+
 class _OffsetImage extends CustomPainter {
   _OffsetImage(this.piUI);
 
   final _PIUI piUI;
+  bool _repaint = true;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -114,27 +155,34 @@ class _OffsetImage extends CustomPainter {
 
   @override
   bool shouldRepaint(CustomPainter oldDelegate) {
+    if (_repaint) {
+      _repaint = false;
+      return true;
+    }
     return false;
   }
 }
 
 class _PIUI {
   final PanoramaImage pImage;
-  final Size size;
-  int widthPlusScreen;
-  DisplayState shown = DisplayState.horizon;
-  Offset offset = const Offset(0, 0);
-  final Sink<MapParams> fromPanorama;
+  final Size _size;
+  var _zoom = 1;
+  DisplayState _shown = DisplayState.horizon;
+  Offset mapOffset;
+  final Sink<MapParams> _fromPanorama;
 
-  _PIUI(this.fromPanorama, this.pImage, this.size)
-      : widthPlusScreen = pImage.reverse[0].length +
-            size.width * pImage.reverse.length ~/ size.height;
+  _PIUI(this._fromPanorama, this.pImage, this._size, this.mapOffset) {
+    if (mapOffset.dy == 0) {
+      mapOffset += Offset(0, _mapHeight() / 2);
+    }
+    _fromPanorama.add(MapParams.sendHorizon(_getHorizon()));
+    _fromPanorama.add(MapParams.sendFitHorizon());
+  }
 
   CustomPaint getImage() {
-    // print("Building with offset ${pImage?.off}");
-    switch (shown) {
+    // print("getImage with shown $shown");
+    switch (_shown) {
       case DisplayState.horizon:
-        fromPanorama.add(MapParams.sendHorizon(_getHorizon()));
         return CustomPaint(painter: _OffsetImage(this));
       case DisplayState.poi:
         return CustomPaint(painter: _OffsetImage(this));
@@ -142,62 +190,79 @@ class _PIUI {
   }
 
   ui.Rect getViewRect() {
-    double zoom = 1;
-    // if (shown == DisplayState.poi) {
-    //   zoom = 2;
-    // }
     var r = ui.Rect.fromCenter(
-        center: ui.Offset(_imgCenterView(), _height() / 2),
-        width: _imgViewWidth() / zoom,
-        height: _height().toDouble() / zoom);
+        center: mapOffset,
+        width: _mapViewWidth(),
+        height: _mapHeight().toDouble() / _zoom);
     return r;
   }
 
   tap(Offset tapOff) {
-    switch (shown) {
+    switch (_shown) {
       case DisplayState.horizon:
-        shown = DisplayState.poi;
+        _shown = DisplayState.poi;
         final pos = _firstPanoramaPoint(tapOff);
-        final posOff = Offset(tapOff.dx, pos.$2.toDouble() * _imgViewFactor());
+        final posOff =
+            Offset(tapOff.dx, pos.$2.toDouble() * _mapToViewFactor());
         updateOffset(posOff - _center());
+        _zoom = 3;
         break;
       case DisplayState.poi:
-        shown = DisplayState.horizon;
-        offset = Offset(offset.dx, 0);
+        _zoom = 1;
+        _shown = DisplayState.horizon;
+        mapOffset = Offset(mapOffset.dx, _mapHeight() / 2);
+        _fromPanorama.add(MapParams.sendHorizon(_getHorizon()));
+        _fromPanorama.add(MapParams.sendFitHorizon());
         break;
     }
   }
 
   updateOffset(Offset off) {
-    print("Updating offset $off for $shown");
-    switch (shown) {
+    // print("Updating $off for $_shown");
+    off /= _mapToViewFactor();
+    _fromPanorama.add(MapParams.sendHorizon(_getHorizon()));
+    switch (_shown) {
       case DisplayState.horizon:
-        _updateHorizonOffset(off.dx);
+        _fromPanorama.add(MapParams.sendFitHorizon());
+        mapOffset = Offset(mapOffset.dx + off.dx, _mapHeight() / 2);
         break;
       case DisplayState.poi:
-        offset += off;
-        fromPanorama.add(MapParams.sendLocationPOI(_toLatLng(_center())));
+        mapOffset += off;
+        _fromPanorama.add(MapParams.sendLocationPOI(_toLatLng(_center())));
         break;
+    }
+    final mapMinimum = _mapViewWidth() / 2;
+    mapOffset = Offset(((mapOffset.dx - mapMinimum) % _mapWidth()) + mapMinimum,
+        mapOffset.dy % _mapHeight());
+
+    // Check if the current panorama is lower than the midpoint and
+    // adjust the panorama to stay in the middle.
+    if (_shown == DisplayState.poi) {
+      if (mapOffset.dy > _mapHeight()) {
+        mapOffset -= Offset(0, mapOffset.dy - _mapHeight());
+      }
+      if (pImage.reverse[mapOffset.dy.toInt() % _mapWidth()]
+              [mapOffset.dx.toInt() % _mapWidth()] ==
+          null) {
+        var first =
+            _firstPanoramaPoint(Offset(_size.width / 2, _size.height / 2));
+        mapOffset += Offset(0, first.$2 - mapOffset.dy);
+      }
     }
   }
 
-  _updateHorizonOffset(double dx) {
-    offset = Offset((offset.dx + dx) % widthPlusScreen, offset.dy);
-    // print("New offset: $offset - image width: $widthPlusScreen");
+  bool isPOI() {
+    return _shown == DisplayState.poi;
   }
 
   List<LatLng> _getHorizon() {
     List<LatLng> horizon = [];
-    var imgOffset = offset.dx ~/ _imgViewFactor();
-    var end = ((imgOffset + _imgViewWidth()) % _width()).toInt();
-    for (var dx = imgOffset % _width(); dx != end; dx = (dx + 1) % _width()) {
+    var imgOffset = (mapOffset.dx - _mapViewWidth() / 2).toInt();
+    for (var dx = imgOffset; dx < imgOffset + _mapViewWidth(); dx++) {
       // print("dx: $dx - $offset - ${width()}");
-      for (var y = 0; y < _height(); y++) {
+      for (var y = 0; y < _mapHeight(); y++) {
         // print("y: $y");
-        if (dx >= pImage.reverse[y].length) {
-          print("Dx overflow: $dx - ${_width()} - ${pImage.reverse[y].length}");
-        }
-        var c = pImage.reverse[y][dx.toInt()];
+        var c = pImage.reverse[y][dx % _mapWidth()];
         if (c != null) {
           horizon.add(c);
           break;
@@ -208,9 +273,15 @@ class _PIUI {
   }
 
   (int, int) _firstPanoramaPoint(Offset pos) {
-    final mapX = ((offset.dx + pos.dx)) ~/ _imgViewFactor() % _width();
-    final mapY = pos.dy ~/ _imgViewFactor();
-    for (var y = mapY; y < _height(); y++) {
+    final posInMap = mapOffset + (pos - _center()) / _mapToViewFactor();
+    final mapX = posInMap.dx.toInt() % _mapWidth();
+    var mapY = posInMap.dy.toInt();
+    if (mapY >= _mapHeight()) {
+      mapY = _mapHeight() - 1;
+    } else if (mapY < 0) {
+      mapY = 0;
+    }
+    for (var y = mapY; y < _mapHeight(); y++) {
       if (pImage.reverse[y][mapX] != null) {
         return (mapX, y);
       }
@@ -226,20 +297,18 @@ class _PIUI {
   }
 
   Offset _center() {
-    return size.center(Offset.zero);
+    return _size.center(Offset.zero);
   }
 
-  int _width() {
+  int _mapWidth() {
     return pImage.reverse[0].length;
   }
 
-  int _height() {
+  int _mapHeight() {
     return pImage.reverse.length;
   }
 
-  double _imgViewFactor() => size.height / _height();
+  double _mapToViewFactor() => _size.height / _mapHeight() * _zoom;
 
-  double _imgViewWidth() => size.width / _imgViewFactor();
-
-  double _imgCenterView() => _imgViewWidth() / 2 + offset.dx / _imgViewFactor();
+  double _mapViewWidth() => _size.width / _mapToViewFactor();
 }
