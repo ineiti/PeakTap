@@ -2,29 +2,28 @@ import 'dart:ui' as ui;
 
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:mountain_panorama/elevation/elevation.dart';
 
 import 'map_widget/map_params.dart';
 import 'panorama/panorama.dart';
 
-class Panorama extends StatefulWidget {
-  const Panorama(
+class PanoramaWidget extends StatefulWidget {
+  const PanoramaWidget(
       {super.key, required this.toPanorama, required this.fromPanorama});
 
   final Stream<MapParams> toPanorama;
   final Sink<MapParams> fromPanorama;
 
   @override
-  State<Panorama> createState() => PanoramaState();
+  State<PanoramaWidget> createState() => PanoramaWidgetState();
 }
 
 // The PanoramaWidget either shows the panorama and sends the Horizon to the
 // map, or shows a zoomed-in version of the panorama and sends POIs to the map.
 enum DisplayState { horizon, poi }
 
-class PanoramaState extends State<Panorama> {
+class PanoramaWidgetState extends State<PanoramaWidget> {
   var empty = Image.asset("assets/empty.png");
   HeightProfileProvider? heightProfile;
   PanoramaImageBuilder? piBuilder;
@@ -94,14 +93,22 @@ class PanoramaState extends State<Panorama> {
       heightProfile = await HeightProfileProvider.withAppDir();
       piBuilder = PanoramaImageBuilder(heightProfile!);
       widget.toPanorama.listen((event) {
-        event.isLocationViewpoint((loc) async {
-          var pi = await piBuilder?.drawPanorama(imgHeight, loc);
+        event.isLocationViewpoint((loc) {
           setState(() {
-            pImage = pi;
-            if (_piUI != null) {
-              _oldOffset = _piUI!.mapOffset;
-            }
-            _piUI = null;
+            pImage = null;
+          });
+          // TODO - create a better `drawPanorama` which returns
+          // it's state while drawing and downloading parts of the
+          // panorama.
+          Future.delayed(const Duration(milliseconds: 150), () async {
+            var pi = await piBuilder?.drawPanorama(imgHeight, loc);
+            setState(() {
+              pImage = pi;
+              if (_piUI != null) {
+                _oldOffset = _piUI!.mapOffset;
+              }
+              _piUI = null;
+            });
           });
         });
       });
@@ -173,7 +180,7 @@ class _PIUI {
 
   _PIUI(this._fromPanorama, this.pImage, this._size, this.mapOffset) {
     if (mapOffset.dy == 0) {
-      mapOffset += Offset(0, _mapHeight() / 2);
+      mapOffset += Offset(_mapWidth().toDouble(), _mapHeight() / 2);
     }
     _fromPanorama.add(MapParams.sendHorizon(_getHorizon()));
     _fromPanorama.add(MapParams.sendFitHorizon());

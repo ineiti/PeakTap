@@ -27,18 +27,30 @@ Example screenshot of zooming in on Mont Blanc:
 
 I would like to implement the following:
 
-- correctly place pin (currently it's a bit off)
-- load tiles from https://map.ineiti.ch
-- when starting up, there is often a moment when the polygon seems to have two points:
-this is because it still shows the old, pre-defined POI
+- add a cross to the binoculars and some info:
+  - heading
+  - distance
+  - height
 - having some buttons to enable/disable features:
   - go back to GPS
   - make mountains higher (if they're far away) / lower (if you're in the Valais)
-- showing the panorama in the direction the phone points
+  - showing the panorama in the direction the phone points 
+- correctly place pin (currently it's a bit off)
+- add better startup screens: "waiting on GPS" - "downloading maps" - "creating panorama"
+  - for this to work, the panorama creator needs to callback from time to time
+    the main thread while doing its work.
+  - then the panorama should also start painting the main window first, before
+  finishing the rest, for a better UX
+- load tiles from https://map.ineiti.ch
 
 Other ideas are welcome...
 
 ## CHANGELOG
+
+- 2023-07-13
+  - when starting up, there is often a moment when the polygon seems to have two points:
+  this is because it still shows the old, pre-defined POI
+  - when choosing a new POI on the map, also show "creating panorama"
 
 - 2023-07-11
   - avoid loading twice the same tile
