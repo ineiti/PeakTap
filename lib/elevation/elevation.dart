@@ -25,7 +25,12 @@ class HeightProfileProvider {
 
   Future<int> getHeight(LatLng pos) async {
     final tileImg = await _getTile(pos);
-    return tileImg.readPixel(pos);
+    final height = tileImg.readPixel(pos);
+    if (height == -32768){
+      // The SRTM maps encode -32768 as the sea height.
+      return 0;
+    }
+    return height;
   }
 
   Future<TiffImage> _getTile(LatLng pos) async {
@@ -100,6 +105,11 @@ class HeightProfileProvider {
 
       throw Exception('SRTM tile file not found in the downloaded archive');
     } else {
+      if (response.statusCode == 404){
+        // Missing tiles mean that it's open ocean or part of the earth that
+        // hasn't been scanned, like the North- and the South-pole.
+        return Uint8List(0);
+      }
       throw Exception('Failed to download SRTM tile: ${response.toString()}');
     }
   }

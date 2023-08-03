@@ -4,6 +4,7 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:mountain_panorama/elevation/elevation.dart';
+import 'package:sprintf/sprintf.dart';
 
 import 'map_widget/map_params.dart';
 import 'panorama/panorama.dart';
@@ -149,15 +150,70 @@ class Binoculars extends CustomClipper<ui.Path> {
 }
 
 class _OffsetImage extends CustomPainter {
-  _OffsetImage(this.piUI);
+  _OffsetImage(this.piUI, this._cross);
 
   final _PIUI piUI;
   bool _repaint = true;
+  bool _cross;
 
   @override
   void paint(Canvas canvas, Size size) {
     canvas.drawImageRect(piUI.pImage.map, piUI.getViewRect(),
         const Offset(0, 0) & size, Paint());
+    if (_cross) {
+      var width = 0.2, space = 3;
+      var centerX = size.width / 2, centerY = size.height / 2;
+      var dX = centerX * width, dY = centerY * width;
+      var p = Paint()
+        ..color = const Color(0xffffaaaa)
+        ..strokeWidth = 3;
+      for (var mulX = -1; mulX <= 1; mulX += 2) {
+        for (var mulY = -1; mulY <= 1; mulY += 2) {
+          var sX = space * mulX, sY = space * mulY;
+          canvas.drawLine(
+              Offset(centerX + dX * mulX + sX, centerY + dY * mulY + sY),
+              Offset(centerX + sX, centerY + sY),
+              p);
+        }
+      }
+      if (piUI.poiE != null) {
+        var headingDegrees = piUI.poiE!.heading.toInt() % 360;
+        var heading = sprintf("%03d° ", [headingDegrees]);
+        headingDegrees = ((headingDegrees + 360 + 22.5) ~/ 45) % 8;
+        var headingText =
+            ["N", "NE", "E", "SE", "S", "SW", "W", "NW"][headingDegrees];
+        _writeText(
+            canvas, Offset(centerX / 3, centerY / 3), heading + headingText);
+        _writeText(canvas, Offset(centerX * 5 / 3, centerY / 3),
+            "${piUI.poiE!.distance.toInt()} m", right: true);
+        _writeText(canvas, Offset(centerX * 5 / 3, centerY * 2 / 3),
+            "${piUI.poiE!.height.toInt()} m", right: true);
+      }
+    }
+  }
+
+  _writeText(Canvas c, Offset o, String s, {bool right = false}) {
+    final align = right ? TextAlign.right : TextAlign.left;
+    final width = right ? o.dx : 0;
+    var textSpan = TextSpan(
+      text: s,
+      style: const TextStyle(
+        color: Colors.greenAccent,
+        fontSize: 24,
+        fontFamily: "7segments",
+      ),
+    );
+    final textPainter = TextPainter(
+      text: textSpan,
+      textDirection: TextDirection.ltr,
+      textAlign: align,
+    );
+    textPainter.layout(
+      minWidth: width.toDouble(),
+      // minWidth: 0,
+      // maxWidth: size.width,
+    );
+    textPainter.paint(c, right ? Offset(0, o.dy) : o);
   }
 
   @override
@@ -170,10 +226,18 @@ class _OffsetImage extends CustomPainter {
   }
 }
 
+class _POIElements {
+  late double heading, height;
+  int distance;
+
+  _POIElements(this.heading, this.height, this.distance);
+}
+
 class _PIUI {
   final PanoramaImage pImage;
   final Size _size;
   var _zoom = 1;
+  _POIElements? poiE;
   DisplayState _shown = DisplayState.horizon;
   Offset mapOffset;
   final Sink<MapParams> _fromPanorama;
@@ -190,9 +254,9 @@ class _PIUI {
     // print("getImage with shown $shown");
     switch (_shown) {
       case DisplayState.horizon:
-        return CustomPaint(painter: _OffsetImage(this));
+        return CustomPaint(painter: _OffsetImage(this, false));
       case DisplayState.poi:
-        return CustomPaint(painter: _OffsetImage(this));
+        return CustomPaint(painter: _OffsetImage(this, true));
     }
   }
 
@@ -232,10 +296,14 @@ class _PIUI {
       case DisplayState.horizon:
         _fromPanorama.add(MapParams.sendFitHorizon());
         mapOffset = Offset(mapOffset.dx + off.dx, _mapHeight() / 2);
+        poiE = null;
         break;
       case DisplayState.poi:
         mapOffset += off;
-        _fromPanorama.add(MapParams.sendLocationPOI(_toLatLng(_center())));
+        var ll = _toLatLng(_center());
+        _fromPanorama.add(MapParams.sendLocationPOI(ll));
+        poiE = _POIElements(360 / pImage.map.width * 2 * mapOffset.dx,
+            _toHeight(_center()), _toDistance(_center()));
         break;
     }
     final mapMinimum = _mapViewWidth() / 2;
@@ -248,7 +316,7 @@ class _PIUI {
       if (mapOffset.dy > _mapHeight()) {
         mapOffset -= Offset(0, mapOffset.dy - _mapHeight());
       }
-      if (pImage.reverse[mapOffset.dy.toInt() % _mapWidth()]
+      if (pImage.offsetToLatLang[mapOffset.dy.toInt() % _mapWidth()]
               [mapOffset.dx.toInt() % _mapWidth()] ==
           null) {
         var first =
@@ -269,7 +337,7 @@ class _PIUI {
       // print("dx: $dx - $offset - ${width()}");
       for (var y = 0; y < _mapHeight(); y++) {
         // print("y: $y");
-        var c = pImage.reverse[y][dx % _mapWidth()];
+        var c = pImage.offsetToLatLang[y][dx % _mapWidth()];
         if (c != null) {
           horizon.add(c);
           break;
@@ -289,18 +357,26 @@ class _PIUI {
       mapY = 0;
     }
     for (var y = mapY; y < _mapHeight(); y++) {
-      if (pImage.reverse[y][mapX] != null) {
+      if (pImage.offsetToLatLang[y][mapX] != null) {
         return (mapX, y);
       }
     }
-    print(
-        "Searched at $mapX / $mapY for ${pImage.reverse[0].length} / ${pImage.reverse.length}");
-    throw ("Didn't manage to find land");
+    throw ("Didn't manage to find land at $mapX / $mapY for ${pImage.offsetToLatLang[0].length} / ${pImage.offsetToLatLang.length}");
   }
 
   LatLng _toLatLng(ui.Offset pos) {
     final p = _firstPanoramaPoint(pos);
-    return pImage.reverse[p.$2][p.$1]!;
+    return pImage.offsetToLatLang[p.$2][p.$1]!;
+  }
+
+  double _toHeight(ui.Offset pos) {
+    final p = _firstPanoramaPoint(pos);
+    return pImage.offsetToHeight[p.$2][p.$1]!;
+  }
+
+  int _toDistance(ui.Offset pos) {
+    final p = _firstPanoramaPoint(pos);
+    return pImage.offsetToDistance[p.$2][p.$1]!;
   }
 
   Offset _center() {
@@ -308,11 +384,11 @@ class _PIUI {
   }
 
   int _mapWidth() {
-    return pImage.reverse[0].length;
+    return pImage.offsetToLatLang[0].length;
   }
 
   int _mapHeight() {
-    return pImage.reverse.length;
+    return pImage.offsetToLatLang.length;
   }
 
   double _mapToViewFactor() => _size.height / _mapHeight() * _zoom;

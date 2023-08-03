@@ -36,11 +36,11 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  String _position = "Searching GPS";
-  var toMap = StreamController<MapParams>.broadcast();
-  var fromMap = StreamController<MapParams>();
-  var toPanorama = StreamController<MapParams>.broadcast();
-  var fromPanorama = StreamController<MapParams>();
+  LatLng? _position;
+  final toMap = StreamController<MapParams>.broadcast();
+  final fromMap = StreamController<MapParams>();
+  final toPanorama = StreamController<MapParams>.broadcast();
+  final fromPanorama = StreamController<MapParams>();
 
   @override
   void initState() {
@@ -50,8 +50,9 @@ class _MyHomePageState extends State<MyHomePage> {
       event.isLocationViewpoint((loc) {
         toPanorama.add(event);
         setState(() {
-          _position =
-              "${loc.latitude.toStringAsFixed(4)} / ${loc.longitude.toStringAsFixed(4)}";
+          _position = loc;
+          // _position =
+          //     "${loc.latitude.toStringAsFixed(4)} / ${loc.longitude.toStringAsFixed(4)}";
         });
       });
     });
@@ -61,9 +62,10 @@ class _MyHomePageState extends State<MyHomePage> {
     });
 
     Future.microtask(() async {
-      var position = await _determinePosition();
-      toMap.add(MapParams.sendLocationViewpoint(
-          LatLng(position.latitude, position.longitude)));
+      var gpsPosition = await _determinePosition();
+      setState(() {
+        _position = LatLng(gpsPosition.latitude, gpsPosition.longitude);
+      });
     });
   }
 
@@ -79,16 +81,22 @@ class _MyHomePageState extends State<MyHomePage> {
             Center(
               child: Column(children: <Widget>[
                 const Text(
-                  'You are currently here :',
+                  'Current position:',
                 ),
                 Text(
-                  _position,
-                  style: Theme.of(context).textTheme.headlineMedium,
+                  _position != null
+                      ? _position!.toSexagesimal()
+                      : "Searching GPS",
+                  style: Theme.of(context).textTheme.titleLarge,
                 ),
               ]),
             ),
             Expanded(
-              child: MapWidget(toMap.stream, fromMap.sink),
+              child: MapWidget(toMap.stream, fromMap.sink, _position),
+            ),
+            Expanded(
+              flex: 0,
+              child: _HorizontalButtonRow(toMap.sink, toPanorama.sink),
             ),
             Expanded(
               child: SizedBox(
@@ -102,6 +110,45 @@ class _MyHomePageState extends State<MyHomePage> {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _HorizontalButtonRow extends StatefulWidget {
+  final Sink<MapParams> toMap;
+  final Sink<MapParams> toPanorama;
+
+  const _HorizontalButtonRow(this.toMap, this.toPanorama, {super.key});
+
+  @override
+  _HorizontalButtonRowState createState() => _HorizontalButtonRowState();
+}
+
+class _HorizontalButtonRowState extends State<_HorizontalButtonRow> {
+  @override
+  void initState() {
+    super.initState();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.all(8.0),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        children: [
+          ElevatedButton(
+            onPressed: () {
+              Future.microtask(() async {
+                var position = await _determinePosition();
+                widget.toMap.add(MapParams.sendLocationViewpoint(
+                    LatLng(position.latitude, position.longitude)));
+              });
+            },
+            child: const Text('Update GPS'),
+          )
+        ],
       ),
     );
   }

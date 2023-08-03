@@ -16,10 +16,14 @@ class TiffImage {
   late ByteData _byteData;
   late IFD _image;
   late Endian _endianness;
+  late bool empty;
 
   TiffImage(Uint8List fileData) {
-    _byteData = ByteData.view(fileData.buffer);
-    _readHeader();
+    empty = fileData.isEmpty;
+    if (!empty) {
+      _byteData = ByteData.view(fileData.buffer);
+      _readHeader();
+    }
   }
 
   void _readHeader() {
@@ -45,6 +49,10 @@ class TiffImage {
   }
 
   int readPixel(LatLng pos) {
+    if (empty){
+      return -32768;
+    }
+
     // print("Position is: $pos - Top left is: (${_image.degreeTop}, ${_image.degreeLeft})");
     if (pos.latitude > _image.degreeTop ||
         pos.latitude <= _image.degreeTop - 5 ||

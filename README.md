@@ -27,25 +27,39 @@ Example screenshot of zooming in on Mont Blanc:
 
 I would like to implement the following:
 
-- add a cross to the binoculars and some info:
-  - heading
-  - distance
-  - height
 - having some buttons to enable/disable features:
-  - go back to GPS
   - make mountains higher (if they're far away) / lower (if you're in the Valais)
+  - enable / disable earth curvature
   - showing the panorama in the direction the phone points 
-- correctly place pin (currently it's a bit off)
+  - height above current point (standard is 10m)
 - add better startup screens: "waiting on GPS" - "downloading maps" - "creating panorama"
   - for this to work, the panorama creator needs to callback from time to time
     the main thread while doing its work.
   - then the panorama should also start painting the main window first, before
-  finishing the rest, for a better UX
-- load tiles from https://map.ineiti.ch
+    finishing the rest, for a better UX
+- load tiles from https://map.ineiti.ch for faster loading
+- skip "Searching for GPS" by allowing the user to choose the standing point
+
+## Bugs
+
+- In telescope mode, when panning down, it wraps around. Should stop instead.
+- correctly place pin (currently it's a bit off)
+
+## Before release
+
+- add paying voting option for next version
 
 Other ideas are welcome...
 
 ## CHANGELOG
+
+- 2023-08-03
+  - add a cross to the binoculars and some info:
+    - heading
+    - distance
+    - height
+  - add a button to update GPS
+  - make working iOS version
 
 - 2023-07-13
   - when starting up, there is often a moment when the polygon seems to have two points:
