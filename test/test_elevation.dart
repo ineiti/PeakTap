@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:latlong2/latlong.dart';
-import 'package:mountain_panorama/elevation/elevation.dart';
+import 'package:peak_tap/elevation/elevation.dart';
 import 'package:tuple/tuple.dart';
 import 'package:universal_io/io.dart';
 

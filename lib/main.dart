@@ -4,38 +4,38 @@ import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
 import 'map_widget/map_params.dart';
 import 'map_widget/map_widget.dart';
-import 'panorama_widget.dart';
+import 'panorama_widget/panorama_widget.dart';
 
 void main() {
-  runApp(const MyApp());
+  runApp(const PeakTap());
 }
 
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+class PeakTap extends StatelessWidget {
+  const PeakTap({super.key});
 
   // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'MountainPanorama',
+      title: 'PeakTap',
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
-      home: const MyHomePage(title: 'Showing Mountain Panoramas'),
+      home: const MainPage(title: 'Interactive Mountain Panoramas'),
     );
   }
 }
 
-class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key, required this.title});
+class MainPage extends StatefulWidget {
+  const MainPage({super.key, required this.title});
 
   final String title;
 
   @override
-  State<MyHomePage> createState() => _MyHomePageState();
+  State<MainPage> createState() => _MainPageState();
 }
 
-class _MyHomePageState extends State<MyHomePage> {
+class _MainPageState extends State<MainPage> {
   LatLng? _position;
   final toMap = StreamController<MapParams>.broadcast();
   final fromMap = StreamController<MapParams>();

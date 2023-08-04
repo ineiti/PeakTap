@@ -3,11 +3,11 @@ import 'dart:ui' as ui;
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:latlong2/latlong.dart';
-import 'package:mountain_panorama/elevation/elevation.dart';
+import 'package:peak_tap/elevation/elevation.dart';
 import 'package:sprintf/sprintf.dart';
 
-import 'map_widget/map_params.dart';
-import 'panorama/panorama.dart';
+import '../map_widget/map_params.dart';
+import 'panorama.dart';
 
 class PanoramaWidget extends StatefulWidget {
   const PanoramaWidget(

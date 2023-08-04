@@ -1,4 +1,4 @@
-# MountainPanorama
+# PeakTap
 
 Showing a nice mountain panorama and lets you search for anything in view:
 - calculates the panorama and displays it (currently with a flat earth :)
@@ -27,16 +27,17 @@ Example screenshot of zooming in on Mont Blanc:
 
 I would like to implement the following:
 
-- having some buttons to enable/disable features:
-  - make mountains higher (if they're far away) / lower (if you're in the Valais)
-  - enable / disable earth curvature
-  - showing the panorama in the direction the phone points 
-  - height above current point (standard is 10m)
 - add better startup screens: "waiting on GPS" - "downloading maps" - "creating panorama"
   - for this to work, the panorama creator needs to callback from time to time
     the main thread while doing its work.
   - then the panorama should also start painting the main window first, before
     finishing the rest, for a better UX
+- having some buttons to enable/disable features:
+  - make mountains higher (if they're far away) / lower (if you're in the Valais)
+  - enable / disable earth curvature
+  - showing the panorama in the direction the phone points 
+  - height above current point (standard is 10m)
+- show complete panorama on bottom and allow user to scroll fast using it
 - load tiles from https://map.ineiti.ch for faster loading
 - skip "Searching for GPS" by allowing the user to choose the standing point
 
@@ -52,6 +53,9 @@ I would like to implement the following:
 Other ideas are welcome...
 
 ## CHANGELOG
+
+- 2023-08-04
+  - changed name to PeakTap
 
 - 2023-08-03
   - add a cross to the binoculars and some info:

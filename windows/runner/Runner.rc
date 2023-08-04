@@ -90,12 +90,12 @@ BEGIN
         BLOCK "040904e4"
         BEGIN
             VALUE "CompanyName", "blue.gasser" "\0"
-            VALUE "FileDescription", "mountain_panorama" "\0"
+            VALUE "FileDescription", "peak_tap" "\0"
             VALUE "FileVersion", VERSION_AS_STRING "\0"
-            VALUE "InternalName", "mountain_panorama" "\0"
+            VALUE "InternalName", "peak_tap" "\0"
             VALUE "LegalCopyright", "Copyright (C) 2023 blue.gasser. All rights reserved." "\0"
-            VALUE "OriginalFilename", "mountain_panorama.exe" "\0"
-            VALUE "ProductName", "mountain_panorama" "\0"
+            VALUE "OriginalFilename", "peak_tap.exe" "\0"
+            VALUE "ProductName", "peak_tap" "\0"
             VALUE "ProductVersion", VERSION_AS_STRING "\0"
         END
     END

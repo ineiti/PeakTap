@@ -4,7 +4,7 @@ import 'dart:math' show atan, cos, log, max, min, sin;
 
 import 'package:image/image.dart' as img;
 import 'package:latlong2/latlong.dart';
-import 'package:mountain_panorama/elevation/elevation.dart';
+import 'package:peak_tap/elevation/elevation.dart';
 
 class PanoramaImageBuilder {
   HeightProfileProvider hp;
@@ -14,6 +14,7 @@ class PanoramaImageBuilder {
 
   PanoramaImageBuilder(this.hp);
 
+  // All measurement values are in meter.
   Future<PanoramaImage> drawPanorama(int height, LatLng location) async {
     var tmpImage = img.Image(width: height * 12 * 2, height: height);
     List<List<LatLng?>> offsetToLatLang =
@@ -55,7 +56,7 @@ class PanoramaImageBuilder {
         // Sorry flat-earthers, but without that correction it's just not
         // accurate...
         var alpha = atan(distance / earthRadius);
-        var horizon = (1 - cos(alpha)) * earthRadius;
+        var horizon = (1 - cos(alpha)) * earthRadius * 0;
         var height = await hp.getHeight(LatLng(lat, lng)) - horizon;
         var verAngle = atan((height - heightReference) / distance) * 180 / pi;
         // print("$lat/$lng - $distance = $height - angle: $verAngle");

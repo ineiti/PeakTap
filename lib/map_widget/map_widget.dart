@@ -65,7 +65,7 @@ class MapWidgetState extends State<MapWidget> {
         children: [
           TileLayer(
             urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-            userAgentPackageName: 'ch.ineiti.mountain_panorama',
+            userAgentPackageName: 'ch.ineiti.peak_tap',
           ),
           PolygonLayer(
             polygons: [

@@ -1,6 +1,6 @@
 {
-    "name": "mountain_panorama",
-    "short_name": "mountain_panorama",
+    "name": "peak_tap",
+    "short_name": "peak_tap",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",
