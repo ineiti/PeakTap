@@ -7,11 +7,10 @@ import 'package:latlong2/latlong.dart';
 import 'map_params.dart';
 
 class MapWidget extends StatefulWidget {
-  const MapWidget(this.toMap, this.fromMap, this._initialPosition, {super.key});
+  const MapWidget(this.toMap, this.fromMap, {super.key});
 
   final Stream<MapParams> toMap;
   final Sink<MapParams> fromMap;
-  final LatLng? _initialPosition;
 
   @override
   State<MapWidget> createState() => MapWidgetState();
@@ -21,6 +20,7 @@ class MapWidgetState extends State<MapWidget> {
   Marker? marker, poi;
   int? lastClick;
   final _polygon = <LatLng>[];
+  bool mapReady = false;
 
   LatLng? _markerCenter;
   LatLng? _markerPOI;
@@ -29,7 +29,6 @@ class MapWidgetState extends State<MapWidget> {
 
   @override
   Widget build(BuildContext context) {
-    _markerCenter ??= widget._initialPosition;
     if (_markerCenter == null) {
       return const Align(
           alignment: Alignment.center,
@@ -57,10 +56,9 @@ class MapWidgetState extends State<MapWidget> {
         options: MapOptions(
           center: _markerCenter!,
           zoom: 10,
-          onTap: _onMapTap,
-          onMapReady: () {
-            _setViewPoint(_markerCenter!);
-          },
+          onTap: (TapPosition? pos, LatLng newPosition) =>
+              widget.fromMap.add(MapParams.sendLocationViewpoint(newPosition)),
+          onMapReady: () => mapReady = true,
         ),
         children: [
           TileLayer(
@@ -86,20 +84,18 @@ class MapWidgetState extends State<MapWidget> {
     }
   }
 
-  void _onMapTap(TapPosition? _pos, LatLng newPosition) {
-    _setViewPoint(newPosition);
-  }
-
   void _setViewPoint(LatLng newPosition) {
     setState(() {
       _markerCenter = newPosition;
       _markerPOI = null;
       _polygon.clear();
     });
-    mapController.move(newPosition, mapController.zoom);
-    Future.delayed(const Duration(milliseconds: 150), () {
-      widget.fromMap.add(MapParams.sendLocationViewpoint(newPosition));
-    });
+    // Future.delayed(const Duration(milliseconds: 150), () {
+    //   widget.fromMap.add(MapParams.sendLocationViewpoint(newPosition));
+    // });
+    if (mapReady) {
+      mapController.move(newPosition, mapController.zoom);
+    }
   }
 
   void _setPOI(LatLng pos) {

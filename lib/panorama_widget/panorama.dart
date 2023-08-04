@@ -56,7 +56,7 @@ class PanoramaImageBuilder {
         // Sorry flat-earthers, but without that correction it's just not
         // accurate...
         var alpha = atan(distance / earthRadius);
-        var horizon = (1 - cos(alpha)) * earthRadius * 0;
+        var horizon = (1 - cos(alpha)) * earthRadius;
         var height = await hp.getHeight(LatLng(lat, lng)) - horizon;
         var verAngle = atan((height - heightReference) / distance) * 180 / pi;
         // print("$lat/$lng - $distance = $height - angle: $verAngle");
@@ -78,12 +78,14 @@ class PanoramaImageBuilder {
             tmpImage.setPixelRgb(
                 vert + panoramaWidth.toInt(), j, gray, gray, gray);
             offsetToLatLang[j][vert] = LatLng(lat, lng);
-            offsetToHeight[j][vert] = height.toDouble();
+            offsetToHeight[j][vert] = height.toDouble() + horizon;
             offsetToDistance[j][vert] = distance;
           }
           verAngleMax = verAngle;
         }
       }
+      // Give the scheduler the possibility to do something else.
+      await Future.delayed(const Duration(microseconds: 1));
     }
     // print("Done drawing");
     ui.Codec codec = await ui.instantiateImageCodec(img.encodePng(tmpImage));

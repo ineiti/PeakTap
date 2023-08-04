@@ -35,12 +35,17 @@ class MainPage extends StatefulWidget {
   State<MainPage> createState() => _MainPageState();
 }
 
+enum MainMsg {
+  updateGPS,
+}
+
 class _MainPageState extends State<MainPage> {
   LatLng? _position;
   final toMap = StreamController<MapParams>.broadcast();
   final fromMap = StreamController<MapParams>();
   final toPanorama = StreamController<MapParams>.broadcast();
   final fromPanorama = StreamController<MapParams>();
+  final toMain = StreamController<MainMsg>();
 
   @override
   void initState() {
@@ -48,12 +53,7 @@ class _MainPageState extends State<MainPage> {
 
     fromMap.stream.listen((event) {
       event.isLocationViewpoint((loc) {
-        toPanorama.add(event);
-        setState(() {
-          _position = loc;
-          // _position =
-          //     "${loc.latitude.toStringAsFixed(4)} / ${loc.longitude.toStringAsFixed(4)}";
-        });
+        _updatePosition(context, loc);
       });
     });
 
@@ -61,11 +61,18 @@ class _MainPageState extends State<MainPage> {
       toMap.add(event);
     });
 
-    Future.microtask(() async {
-      var gpsPosition = await _determinePosition();
-      setState(() {
-        _position = LatLng(gpsPosition.latitude, gpsPosition.longitude);
+    toMain.stream.listen((event) {
+      Future.microtask(() async {
+        switch (event) {
+          case MainMsg.updateGPS:
+            _updatePosition(context);
+        }
       });
+    });
+
+    // TODO: this is ugly: how to call _updatePosition only after the first build?
+    Future.delayed(const Duration(milliseconds: 150), () {
+      _updatePosition(context);
     });
   }
 
@@ -92,11 +99,11 @@ class _MainPageState extends State<MainPage> {
               ]),
             ),
             Expanded(
-              child: MapWidget(toMap.stream, fromMap.sink, _position),
+              child: MapWidget(toMap.stream, fromMap.sink),
             ),
             Expanded(
               flex: 0,
-              child: _HorizontalButtonRow(toMap.sink, toPanorama.sink),
+              child: _HorizontalButtonRow(toMain.sink),
             ),
             Expanded(
               child: SizedBox(
@@ -113,13 +120,70 @@ class _MainPageState extends State<MainPage> {
       ),
     );
   }
+
+  void _updatePosition(BuildContext context, [LatLng? newPosition]) {
+    Future.microtask(() async {
+      if (newPosition == null) {
+        var position = await _determinePosition();
+        newPosition = LatLng(position.latitude, position.longitude);
+      }
+      final posParam = MapParams.sendLocationViewpoint(newPosition!);
+      toMap.add(posParam);
+      toPanorama.add(posParam);
+      setState(() {
+        _position = newPosition;
+      });
+
+      // Wait for the `horizon` message from the panorama, which indicates
+      // that the calculation of the panorama is done.
+      bool l = true;
+      while (l) {
+        final msg = await toMap.stream.take(1).first;
+        msg.isHorizon((p0) {
+          Navigator.of(context).pop();
+          l = false;
+        });
+      }
+    });
+
+    var textStr = newPosition == null ? 'Fetching GPS' : 'Using new position';
+    textStr += ' and drawing the panorama.\n'
+        'If you run PeakTap for the first time, it will\n'
+        'download about 150MB of data, so please be\n'
+        'patient...';
+
+    showDialog(
+        // The user CANNOT close this dialog  by pressing outside it
+        barrierDismissible: false,
+        context: context,
+        builder: (_) {
+          return Dialog(
+            // The background color
+            backgroundColor: Colors.white,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 20),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // The loading indicator
+                  const CircularProgressIndicator(),
+                  const SizedBox(
+                    height: 15,
+                  ),
+                  // Some text
+                  Text(textStr)
+                ],
+              ),
+            ),
+          );
+        });
+  }
 }
 
 class _HorizontalButtonRow extends StatefulWidget {
-  final Sink<MapParams> toMap;
-  final Sink<MapParams> toPanorama;
+  final Sink<MainMsg> toMain;
 
-  const _HorizontalButtonRow(this.toMap, this.toPanorama, {super.key});
+  const _HorizontalButtonRow(this.toMain, {super.key});
 
   @override
   _HorizontalButtonRowState createState() => _HorizontalButtonRowState();
@@ -140,11 +204,7 @@ class _HorizontalButtonRowState extends State<_HorizontalButtonRow> {
         children: [
           ElevatedButton(
             onPressed: () {
-              Future.microtask(() async {
-                var position = await _determinePosition();
-                widget.toMap.add(MapParams.sendLocationViewpoint(
-                    LatLng(position.latitude, position.longitude)));
-              });
+              widget.toMain.add(MainMsg.updateGPS);
             },
             child: const Text('Update GPS'),
           )
