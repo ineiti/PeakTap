@@ -41,9 +41,9 @@ class TiffImage {
     final offset = _byteData.getUint32(4, _endianness);
 
     _image = IFD.fromBytes(_byteData, _endianness, offset);
-    if (_image.nextOffset > 0) {
-      print("There would be a next IFD at ${_image.nextOffset}");
-    }
+    // if (_image.nextOffset > 0) {
+    //   print("There would be a next IFD at ${_image.nextOffset}");
+    // }
 
     // print("Found $_image");
   }
@@ -58,8 +58,8 @@ class TiffImage {
         pos.latitude <= _image.degreeTop - 5 ||
         pos.longitude < _image.degreeLeft ||
         pos.longitude >= _image.degreeLeft + 5) {
-      print(
-          "Pos is: $pos, image top left is: (${_image.degreeTop}, ${_image.degreeLeft})");
+      // print(
+      //     "Pos is: $pos, image top left is: (${_image.degreeTop}, ${_image.degreeLeft})");
       throw Exception("Position outside of this tile");
     }
 

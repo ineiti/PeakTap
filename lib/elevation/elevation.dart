@@ -1,7 +1,6 @@
 import 'dart:typed_data';
 
 import 'package:flutter/foundation.dart';
-import 'package:hive_flutter/hive_flutter.dart';
 import 'package:archive/archive.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:path_provider/path_provider.dart';
@@ -40,7 +39,7 @@ class HeightProfileProvider {
       return _tiles[tileKey]!;
     }
 
-    print("tile key is: $tileKey");
+    // print("tile key is: $tileKey");
 
     Uint8List? tileData;
     var tileFile = File("$initPath/$tileKey.tiff");
@@ -49,10 +48,10 @@ class HeightProfileProvider {
     } else {
       if (_downloading.containsKey(tileKey)){
         while (_downloading[tileKey]!){
-          print("Waiting for download to finish");
+          // print("Waiting for download to finish");
           sleep(const Duration(seconds: 1));
         }
-        print("Download finished");
+        // print("Download finished");
         return _getTile(pos);
       } else {
         _downloading[tileKey] = true;
@@ -68,36 +67,32 @@ class HeightProfileProvider {
   }
 
   String _getTileKey(LatLng pos) {
+    // Magic calculation when looking at https://srtm.csi.cgiar.org/download
+    // And it seems that the srtm website mixed up latitude and longitude, which
+    // seems very strange for that project.
     final lat = (12 - (pos.latitude / 5).floor()).toString().padLeft(2, "0");
     final lon = ((pos.longitude / 5).floor() + 37).toString().padLeft(2, "0");
     return 'srtm_${lon}_$lat';
   }
 
   Future<Uint8List> _downloadTile(String dataKey) async {
-    // Magic calculation when looking at https://srtm.csi.cgiar.org/download
-    // And it seems that the srtm website mixed up latitude and longitude, which
-    // seems very strange for that project.
     final url = Uri.https('srtm.csi.cgiar.org',
         '/wp-content/uploads/files/srtm_5x5/TIFF/$dataKey.zip');
-    print("Downloading $url");
+    // print("Downloading $url");
     var client = HttpClient();
     client.badCertificateCallback = (_, __, ___) => true;
     final request = await client.getUrl(url);
-    // request.headers.add("access-control-allow-origin", "*");
-    // request.headers.add("Content-Type", "application/json");
-    // request.headers.add("Accept", "*/*");
-    // print("Header is: ${request.headers}");
     final response = await request.close();
-    print("Downloaded $url, status is: ${response.statusCode}");
+    // print("Downloaded $url, status is: ${response.statusCode}");
 
     if (response.statusCode == 200) {
-      print("Unzipping");
+      // print("Unzipping");
       final zipBytes = await consolidateHttpClientResponseBytes(response);
       final archive = ZipDecoder().decodeBytes(zipBytes);
 
-      print("Searching files");
+      // print("Searching files");
       for (final file in archive) {
-        print("Found file ${file.name}");
+        // print("Found file ${file.name}");
         if (file.isFile && file.name.endsWith('.tif')) {
           return file.content;
         }

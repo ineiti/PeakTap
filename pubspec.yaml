@@ -45,10 +45,6 @@ dependencies:
 
   image: ^4.0.15
 
-  hive_flutter: ^1.1.0
-  geoimage:
-    path: ./geoimage
-
 dev_dependencies:
   flutter_test:
     sdk: flutter
