@@ -42,7 +42,7 @@ void main() {
       // simplify gray: 3.75s-3.79s
       // no await in getHeight: 192ms
       // Now this is strange, as for the real painting the speed increase is
-      // not as big, but only 8.7s -> 5.1s.
+      // not as big, but only 8.7s -> 5.3s.
       Completer<void> done = Completer();
 
       final pib = PanoramaImageBuilder(provider);

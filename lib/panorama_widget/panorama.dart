@@ -61,7 +61,7 @@ class PanoramaImageBuilder {
               180 /
               pi;
       // print("Angle: dLat / dLng = $horAngle: $dLat / $dLng");
-      var heightReference = await hp.getHeight(LatLng(lat, lng)) + 10;
+      var heightReference = await hp.getHeightAsync(LatLng(lat, lng)) + 10;
       // print("heightReference is $heightReference");
       for (var distance = 0; distance < maxDistance; distance += stepSize) {
         lat += dLat;
@@ -70,7 +70,15 @@ class PanoramaImageBuilder {
         // accurate...
         var alpha = atan(distance / earthRadius);
         var horizon = (1 - cos(alpha)) * earthRadius;
-        var height = await hp.getHeight(LatLng(lat, lng)) - horizon;
+        var ll = LatLng(lat, lng);
+        var height = await hp.getHeightAsync(ll);
+        // var height = 0.0;
+        // try {
+        //   height = hp.getHeight(ll) - horizon;
+        // } catch (e){
+        //   await hp.getTile(LatLng(lat, lng));
+        //   height = hp.getHeight(ll) - horizon;
+        // }
         var verAngle = atan((height - heightReference) / distance) * 180 / pi;
         // print("$lat/$lng - $distance = $height - angle: $verAngle");
         if (verAngle > verAngleMax) {

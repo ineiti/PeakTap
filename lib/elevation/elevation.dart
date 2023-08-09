@@ -28,8 +28,17 @@ class HeightProfileProvider {
     return _downloadLog.stream;
   }
 
-  Future<int> getHeight(LatLng pos) async {
-    final tileImg = await _getTile(pos);
+  Future<int> getHeightAsync(LatLng pos) async {
+    try {
+      return getHeight(pos);
+    } catch (e){
+      await getTile(pos);
+      return getHeight(pos);
+    }
+  }
+
+  int getHeight(LatLng pos) {
+    final tileImg = _getTile(pos);
     final height = tileImg.readPixel(pos);
     if (height == -32768) {
       // The SRTM maps encode -32768 as the sea height.
@@ -38,14 +47,8 @@ class HeightProfileProvider {
     return height;
   }
 
-  Future<TiffImage> _getTile(LatLng pos) async {
+  Future<void> getTile(LatLng pos) async {
     final tileKey = _getTileKey(pos);
-
-    if (_tiles.containsKey(tileKey)) {
-      return _tiles[tileKey]!;
-    }
-
-    // print("tile key is: $tileKey");
 
     Uint8List? tileData;
     var tileFile = File("$initPath/$tileKey.tiff");
@@ -58,18 +61,27 @@ class HeightProfileProvider {
           sleep(const Duration(seconds: 1));
         }
         // print("Download finished");
-        return _getTile(pos);
+        return;
       } else {
         _downloading[tileKey] = true;
         tileData = await _downloadTile(tileKey);
+        // DEBUG: don't save for the moment
         tileFile.writeAsBytesSync(tileData);
         _downloading[tileKey] = false;
       }
       _downloading[tileKey] = false;
     }
     _tiles.putIfAbsent(tileKey, () => TiffImage(tileData!));
+  }
 
-    return _getTile(pos);
+  TiffImage _getTile(LatLng pos) {
+    final tileKey = _getTileKey(pos);
+
+    if (!_tiles.containsKey(tileKey)) {
+      throw("Tile not in cache");
+    }
+    return _tiles[tileKey]!;
+    // print("tile key is: $tileKey");
   }
 
   String _getTileKey(LatLng pos) {
