@@ -1,4 +1,4 @@
-import 'dart:async' show Future;
+import 'dart:async' show Future, StreamController;
 import 'dart:ui' as ui;
 import 'dart:math' show atan, cos, log, max, min, sin;
 
@@ -8,11 +8,21 @@ import 'package:peak_tap/elevation/elevation.dart';
 
 class PanoramaImageBuilder {
   HeightProfileProvider hp;
+  final _stream = StreamController<PIBMessage>.broadcast();
 
-  double horStart = 0, horEnd = 360;
-  double verStart = -5, verEnd = 25;
+  final double horStart = 0, horEnd = 360;
+  final double verStart = -5, verEnd = 85;
+  final int maxDistance = 200000;
 
-  PanoramaImageBuilder(this.hp);
+  PanoramaImageBuilder(this.hp){
+    hp.downloadLogStream().listen((event) {
+      _stream.add(PIBMessage.sendDownloadStatus(event));
+    });
+  }
+
+  Stream<PIBMessage> getStream(){
+    return _stream.stream;
+  }
 
   // All measurement values are in meter.
   Future<PanoramaImage> drawPanorama(int height, LatLng location) async {
@@ -29,6 +39,7 @@ class PanoramaImageBuilder {
     var panoramaWidth = tmpImage.width / 2;
     int stepSize = 50;
     double earthRadius = 6371e3;
+    int percentage = -1;
     // for (var vert = 0; vert < 1; vert++) {
     for (var vert = 0; vert < panoramaWidth; vert++) {
       // print("Vertical is: $vert");
@@ -50,7 +61,7 @@ class PanoramaImageBuilder {
       // print("Angle: dLat / dLng = $horAngle: $dLat / $dLng");
       var heightReference = await hp.getHeight(LatLng(lat, lng)) + 10;
       // print("heightReference is $heightReference");
-      for (var distance = 0; distance < 200000; distance += stepSize) {
+      for (var distance = 0; distance < maxDistance; distance += stepSize) {
         lat += dLat;
         lng += dLng;
         // Sorry flat-earthers, but without that correction it's just not
@@ -86,12 +97,42 @@ class PanoramaImageBuilder {
       }
       // Give the scheduler the possibility to do something else.
       await Future.delayed(const Duration(microseconds: 1));
+      int newPercentage = vert * 100 ~/ panoramaWidth;
+      if (newPercentage > percentage){
+        percentage = newPercentage;
+        _stream.add(PIBMessage.sendPaintPercentage(percentage));
+      }
     }
     // print("Done drawing");
     ui.Codec codec = await ui.instantiateImageCodec(img.encodePng(tmpImage));
     ui.FrameInfo frameInfo = await codec.getNextFrame();
     return PanoramaImage(
         frameInfo.image, offsetToLatLang, offsetToDistance, offsetToHeight);
+  }
+}
+
+class PIBMessage {
+  HPMessage? _msg;
+  int? _paintPerc;
+
+  static PIBMessage sendDownloadStatus(HPMessage msg) {
+    return PIBMessage().._msg = msg;
+  }
+
+  static PIBMessage sendPaintPercentage(int perc){
+    return PIBMessage().._paintPerc = perc;
+  }
+
+  void isDownloadStatus(void Function(HPMessage msg) useIt){
+    if (_msg != null){
+      useIt(_msg!);
+    }
+  }
+
+  void isPaintPercentage(void Function(int perc) useIt){
+    if (_paintPerc != null){
+      useIt(_paintPerc!);
+    }
   }
 }
 

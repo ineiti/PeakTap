@@ -44,7 +44,7 @@ class _MainPageState extends State<MainPage> {
   final toMap = StreamController<MapParams>.broadcast();
   final fromMap = StreamController<MapParams>();
   final toPanorama = StreamController<MapParams>.broadcast();
-  final fromPanorama = StreamController<MapParams>();
+  final fromPanorama = StreamController<MapParams>.broadcast();
   final toMain = StreamController<MainMsg>();
 
   @override
@@ -122,10 +122,18 @@ class _MainPageState extends State<MainPage> {
   }
 
   void _updatePosition(BuildContext context, [LatLng? newPosition]) {
+    final updateDialog = StreamController<void>.broadcast();
+    var textStr = newPosition == null ? 'Fetching GPS' : 'Using new position';
+    var textDownloadDone = "";
+    var textPaint = "";
+    var textDownloadProgress = "";
+
     Future.microtask(() async {
       if (newPosition == null) {
         var position = await _determinePosition();
         newPosition = LatLng(position.latitude, position.longitude);
+        textStr += "\nLocked on GPS";
+        updateDialog.sink.add(null);
       }
       final posParam = MapParams.sendLocationViewpoint(newPosition!);
       toMap.add(posParam);
@@ -134,47 +142,63 @@ class _MainPageState extends State<MainPage> {
         _position = newPosition;
       });
 
-      // Wait for the `horizon` message from the panorama, which indicates
-      // that the calculation of the panorama is done.
-      bool l = true;
-      while (l) {
-        final msg = await toMap.stream.take(1).first;
-        msg.isHorizon((p0) {
+      Completer<void> done = Completer();
+      var listenerMap = toMap.stream.listen((event) {
+        event.isHorizon((p0) {
           Navigator.of(context).pop();
-          l = false;
+          done.complete();
         });
-      }
+      });
+      var listenerPan = fromPanorama.stream.listen((event) {
+        event.isDownloadStatus((msg) {
+          if (msg.percentage == 100) {
+            textDownloadDone += "\nDownloaded tile ${msg.name}";
+            textDownloadProgress = "";
+          } else {
+            textDownloadProgress =
+                "\nDownloading tile ${msg.name}: ${msg.percentage}%";
+          }
+        });
+        event.isPaintingStatus((msg) {
+          textPaint = "\nPainting progress: $msg%";
+        });
+        updateDialog.sink.add(null);
+      });
+
+      await done.future;
+      listenerMap.cancel();
+      listenerPan.cancel();
     });
 
-    var textStr = newPosition == null ? 'Fetching GPS' : 'Using new position';
-    textStr += ' and drawing the panorama.\n'
-        'If you run PeakTap for the first time, it will\n'
-        'download about 150MB of data, so please be\n'
-        'patient...';
-
     showDialog(
-        // The user CANNOT close this dialog  by pressing outside it
         barrierDismissible: false,
         context: context,
         builder: (_) {
           return Dialog(
-            // The background color
             backgroundColor: Colors.white,
-            child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 20),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  // The loading indicator
-                  const CircularProgressIndicator(),
-                  const SizedBox(
-                    height: 15,
-                  ),
-                  // Some text
-                  Text(textStr)
-                ],
-              ),
-            ),
+            child: StatefulBuilder(
+                builder: (BuildContext context, StateSetter setState) {
+              updateDialog.stream.take(1).first.then((value) => setState(() {
+                  }));
+              return Padding(
+                padding:
+                    const EdgeInsets.symmetric(vertical: 20, horizontal: 20),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const CircularProgressIndicator(),
+                    const SizedBox(
+                      height: 15,
+                    ),
+                    // Some text
+                    Text(textStr +
+                        textDownloadDone +
+                        textPaint +
+                        textDownloadProgress)
+                  ],
+                ),
+              );
+            }),
           );
         });
   }

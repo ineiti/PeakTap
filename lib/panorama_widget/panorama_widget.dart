@@ -25,9 +25,9 @@ class PanoramaWidget extends StatefulWidget {
 enum DisplayState { horizon, poi }
 
 class PanoramaWidgetState extends State<PanoramaWidget> {
-  var empty = Image.asset("assets/empty.png");
-  HeightProfileProvider? heightProfile;
-  PanoramaImageBuilder? piBuilder;
+  final _empty = Image.asset("assets/empty.png");
+  late HeightProfileProvider _heightProfile;
+  late PanoramaImageBuilder _piBuilder;
   PanoramaImage? pImage;
   _PIUI? _piUI;
   Offset _oldOffset = Offset.zero;
@@ -43,7 +43,7 @@ class PanoramaWidgetState extends State<PanoramaWidget> {
     if (_widgetKey.currentContext != null) {
       size = (_widgetKey.currentContext!.findRenderObject() as RenderBox).size;
     }
-    Widget mapImage = empty;
+    Widget mapImage = _empty;
     var showBinoculars = false;
     if (pImage != null) {
       _piUI ??= _PIUI(widget.fromPanorama, pImage!, size, _oldOffset);
@@ -91,18 +91,23 @@ class PanoramaWidgetState extends State<PanoramaWidget> {
   void initState() {
     super.initState();
     Future.microtask(() async {
-      heightProfile = await HeightProfileProvider.withAppDir();
-      piBuilder = PanoramaImageBuilder(heightProfile!);
+      _heightProfile = await HeightProfileProvider.withAppDir();
+      _piBuilder = PanoramaImageBuilder(_heightProfile);
+      _piBuilder.getStream().listen((event) {
+        event.isDownloadStatus((msg) {
+          widget.fromPanorama.add(MapParams.sendDownloadStatus(msg));
+        });
+        event.isPaintPercentage((perc) {
+          widget.fromPanorama.add(MapParams.sendPaintingStatus(perc));
+        });
+      });
       widget.toPanorama.listen((event) {
         event.isLocationViewpoint((loc) {
           setState(() {
             pImage = null;
           });
-          // TODO - create a better `drawPanorama` which returns
-          // it's state while drawing and downloading parts of the
-          // panorama.
           Future.delayed(const Duration(milliseconds: 150), () async {
-            var pi = await piBuilder?.drawPanorama(imgHeight, loc);
+            var pi = await _piBuilder.drawPanorama(imgHeight, loc);
             setState(() {
               pImage = pi;
               if (_piUI != null) {
@@ -185,9 +190,11 @@ class _OffsetImage extends CustomPainter {
         _writeText(
             canvas, Offset(centerX / 3, centerY / 3), heading + headingText);
         _writeText(canvas, Offset(centerX * 5 / 3, centerY / 3),
-            "${piUI.poiE!.distance.toInt()} m", right: true);
+            "${piUI.poiE!.distance.toInt()} m",
+            right: true);
         _writeText(canvas, Offset(centerX * 5 / 3, centerY * 2 / 3),
-            "${piUI.poiE!.height.toInt()} m", right: true);
+            "${piUI.poiE!.height.toInt()} m",
+            right: true);
       }
     }
   }

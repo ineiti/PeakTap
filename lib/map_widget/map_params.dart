@@ -1,4 +1,5 @@
 import 'package:latlong2/latlong.dart';
+import 'package:peak_tap/elevation/elevation.dart';
 
 enum LocationUsage {
   none,
@@ -9,17 +10,50 @@ enum LocationUsage {
 enum Message {
   fitHorizon,
   setupFinish,
+  downloadStatus,
+  paintingStatus,
 }
 
-void debug(String s){
+void debug(String s) {
   // print(s);
 }
 
 class MapParams {
   LatLng? location;
   LocationUsage usage = LocationUsage.none;
-  Message ?message;
+  Message? message;
   List<LatLng>? horizon;
+  int? paintPerc;
+  HPMessage? hpMsg;
+
+  @override
+  String toString() {
+    if (message != null) {
+      switch (message!) {
+        case Message.fitHorizon:
+          return "fitHorizon";
+        case Message.setupFinish:
+          return "setupFinish";
+        case Message.downloadStatus:
+          return "downloadStatus";
+        case Message.paintingStatus:
+          return "paintingStatus";
+      }
+    }
+    return "Something else";
+  }
+
+  void isDownloadStatus(void Function(HPMessage msg) useIt) {
+    if (message != null && message == Message.downloadStatus) {
+      useIt(hpMsg!);
+    }
+  }
+
+  void isPaintingStatus(void Function(int perc) useIt) {
+    if (message != null && message == Message.paintingStatus) {
+      useIt(paintPerc!);
+    }
+  }
 
   void isLocation(LocationUsage u, void Function(LatLng loc) useIt) {
     if (location != null && usage == u) {
@@ -43,15 +77,15 @@ class MapParams {
     }
   }
 
-  void isHorizon(void Function(List<LatLng>) useIt){
-    if (horizon != null){
+  void isHorizon(void Function(List<LatLng>) useIt) {
+    if (horizon != null) {
       debug("IsHorizon");
       useIt(horizon!);
     }
   }
 
-  void isFitHorizon(void Function() useIt){
-    if (message == Message.fitHorizon){
+  void isFitHorizon(void Function() useIt) {
+    if (message == Message.fitHorizon) {
       debug("IsFitHorizon");
       useIt();
     }
@@ -77,12 +111,24 @@ class MapParams {
     return MapParams()..message = Message.setupFinish;
   }
 
-  static MapParams sendHorizon(List<LatLng> h){
+  static MapParams sendHorizon(List<LatLng> h) {
     debug("SendHorizon");
     return MapParams()..horizon = h;
   }
 
-  static MapParams sendFitHorizon(){
+  static MapParams sendFitHorizon() {
     return MapParams()..message = Message.fitHorizon;
+  }
+
+  static MapParams sendDownloadStatus(HPMessage msg) {
+    return MapParams()
+      ..message = Message.downloadStatus
+      ..hpMsg = msg;
+  }
+
+  static MapParams sendPaintingStatus(int perc) {
+    return MapParams()
+      ..message = Message.paintingStatus
+      ..paintPerc = perc;
   }
 }

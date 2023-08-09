@@ -27,11 +27,9 @@ Example screenshot of zooming in on Mont Blanc:
 
 I would like to implement the following:
 
-- add better startup screens: "waiting on GPS" - "downloading maps" - "creating panorama"
-  - for this to work, the panorama creator needs to callback from time to time
-    the main thread while doing its work.
-  - then the panorama should also start painting the main window first, before
-    finishing the rest, for a better UX
+- more progress-info needs:
+  - show precision on GPS-lock
+  - show downloading-progress
 - having some buttons to enable/disable features:
   - make mountains higher (if they're far away) / lower (if you're in the Valais)
   - enable / disable earth curvature
@@ -53,6 +51,9 @@ I would like to implement the following:
 Other ideas are welcome...
 
 ## CHANGELOG
+
+- 2023-08-09
+  - added progress-info for locking to GPS, downloading, and painting
 
 - 2023-08-04
   - changed name to PeakTap
