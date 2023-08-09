@@ -40,6 +40,8 @@ class PanoramaImageBuilder {
     int stepSize = 50;
     double earthRadius = 6371e3;
     int percentage = -1;
+    var distScale = 1e-3;
+    var grayMult = 255 / log(maxDistance * distScale);
     // for (var vert = 0; vert < 1; vert++) {
     for (var vert = 0; vert < panoramaWidth; vert++) {
       // print("Vertical is: $vert");
@@ -72,9 +74,6 @@ class PanoramaImageBuilder {
         var verAngle = atan((height - heightReference) / distance) * 180 / pi;
         // print("$lat/$lng - $distance = $height - angle: $verAngle");
         if (verAngle > verAngleMax) {
-          var mult = 1e-3;
-          var gray = min(
-              max((log(distance * mult) * 255 / log(200000 * mult)), 0), 255);
           for (var j = 0; j < tmpImage.height; j++) {
             var verAnglePan =
                 verEnd + (verStart - verEnd) * j / tmpImage.height;
@@ -85,6 +84,8 @@ class PanoramaImageBuilder {
               break;
             }
             // print("Set pixel $vert/$j to $gray");
+            var gray = min(
+                max((log(distance * distScale) * grayMult), 0), 255);
             tmpImage.setPixelRgb(vert, j, gray, gray, gray);
             tmpImage.setPixelRgb(
                 vert + panoramaWidth.toInt(), j, gray, gray, gray);

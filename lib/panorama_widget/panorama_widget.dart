@@ -107,7 +107,9 @@ class PanoramaWidgetState extends State<PanoramaWidget> {
             pImage = null;
           });
           Future.delayed(const Duration(milliseconds: 150), () async {
+            var start = DateTime.now().millisecondsSinceEpoch;
             var pi = await _piBuilder.drawPanorama(imgHeight, loc);
+            print("Painting time: ${DateTime.now().millisecondsSinceEpoch - start} ms");
             setState(() {
               pImage = pi;
               if (_piUI != null) {

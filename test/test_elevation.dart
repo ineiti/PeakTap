@@ -1,6 +1,9 @@
+import 'dart:async';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:peak_tap/elevation/elevation.dart';
+import 'package:peak_tap/panorama_widget/panorama.dart';
 import 'package:tuple/tuple.dart';
 import 'package:universal_io/io.dart';
 
@@ -32,22 +35,32 @@ void main() {
         print("Testing $test");
         expect(await provider.getHeight(test.item2), test.item1);
       }
+    });
 
-      //   test('_downloadTile downloads and unzips the tile', () async {
-      //     // Replace the following coordinates with the ones you want to test
-      //     const latitude = 40.7128;
-      //     const longitude = -74.0060;
-      //
-      //     // Replace this with the URL of the zipped SRTM tile for the above coordinates
-      //     const url = 'https://srtm.csi.cgiar.org/wp-content/uploads/files/srtm_5x5/TIFF/srtm_40_70.tif.zip';
-      //
-      //     final response = File('test_resources/srtm_40_70.tif.zip').readAsBytesSync();
-      //
-      //     final filePath = await provider._downloadTile(latitude, longitude);
-      //     final fileExists = File(filePath).existsSync();
-      //
-      //     expect(fileExists, true);
-      //   });
+    test('performance measurements of panorama', () async {
+      // Start: 3.65s-3.89s
+      // simplify gray: 3.75s-3.79s
+      // no await in getHeight: 192ms
+      // Now this is strange, as for the real painting the speed increase is
+      // not as big, but only 8.7s -> 5.1s.
+      Completer<void> done = Completer();
+
+      final pib = PanoramaImageBuilder(provider);
+      pib.getStream().listen((event) {
+        event.isPaintPercentage((perc) {
+          if (perc % 10 == 0) {
+            print("Painting: $perc%");
+          }
+          if (perc == 99){
+            done.complete();
+          }
+        });
+        event.isDownloadStatus((msg) {
+          print("Downloading ${msg.name}: ${msg.percentage}");
+        });
+      });
+      pib.drawPanorama(10, const LatLng(46.5, 6.5));
+      await done.future;
     });
   });
 }

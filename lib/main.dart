@@ -37,6 +37,7 @@ class MainPage extends StatefulWidget {
 
 enum MainMsg {
   updateGPS,
+  repaint,
 }
 
 class _MainPageState extends State<MainPage> {
@@ -66,6 +67,11 @@ class _MainPageState extends State<MainPage> {
         switch (event) {
           case MainMsg.updateGPS:
             _updatePosition(context);
+            break;
+          case MainMsg.repaint:
+            _updatePosition(context,
+                LatLng(_position!.latitude + 0.0001, _position!.longitude));
+            break;
         }
       });
     });
@@ -178,8 +184,10 @@ class _MainPageState extends State<MainPage> {
             backgroundColor: Colors.white,
             child: StatefulBuilder(
                 builder: (BuildContext context, StateSetter setState) {
-              updateDialog.stream.take(1).first.then((value) => setState(() {
-                  }));
+              updateDialog.stream
+                  .take(1)
+                  .first
+                  .then((value) => setState(() {}));
               return Padding(
                 padding:
                     const EdgeInsets.symmetric(vertical: 20, horizontal: 20),
@@ -231,6 +239,12 @@ class _HorizontalButtonRowState extends State<_HorizontalButtonRow> {
               widget.toMain.add(MainMsg.updateGPS);
             },
             child: const Text('Update GPS'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              widget.toMain.add(MainMsg.repaint);
+            },
+            child: const Text('Repaint'),
           )
         ],
       ),
