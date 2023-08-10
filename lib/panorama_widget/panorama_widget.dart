@@ -108,15 +108,20 @@ class PanoramaWidgetState extends State<PanoramaWidget> {
           });
           Future.delayed(const Duration(milliseconds: 150), () async {
             var start = DateTime.now().millisecondsSinceEpoch;
-            var pi = await _piBuilder.drawPanorama(imgHeight, loc);
-            print("Painting time: ${DateTime.now().millisecondsSinceEpoch - start} ms");
-            setState(() {
-              pImage = pi;
-              if (_piUI != null) {
-                _oldOffset = _piUI!.mapOffset;
-              }
-              _piUI = null;
-            });
+            try {
+              var pi = await _piBuilder.drawPanorama(imgHeight, loc);
+              print(
+                  "Painting time: ${DateTime.now().millisecondsSinceEpoch - start} ms");
+              setState(() {
+                pImage = pi;
+                if (_piUI != null) {
+                  _oldOffset = _piUI!.mapOffset;
+                }
+                _piUI = null;
+              });
+            } catch (e) {
+              widget.fromPanorama.add(MapParams.sendException(e.toString()));
+            }
           });
         });
       });

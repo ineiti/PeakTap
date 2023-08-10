@@ -12,6 +12,7 @@ enum Message {
   setupFinish,
   downloadStatus,
   paintingStatus,
+  exception,
 }
 
 void debug(String s) {
@@ -25,6 +26,7 @@ class MapParams {
   List<LatLng>? horizon;
   int? paintPerc;
   HPMessage? hpMsg;
+  String? strMsg;
 
   @override
   String toString() {
@@ -38,6 +40,8 @@ class MapParams {
           return "downloadStatus";
         case Message.paintingStatus:
           return "paintingStatus";
+        case Message.exception:
+          return "exception";
       }
     }
     return "Something else";
@@ -91,6 +95,12 @@ class MapParams {
     }
   }
 
+  void isException(void Function(String) useIt) {
+    if (message == Message.exception) {
+      useIt(strMsg!);
+    }
+  }
+
   static MapParams sendLocation(LatLng loc, LocationUsage u) {
     debug("SendLocation $u");
     return MapParams()
@@ -130,5 +140,11 @@ class MapParams {
     return MapParams()
       ..message = Message.paintingStatus
       ..paintPerc = perc;
+  }
+
+  static MapParams sendException(String e) {
+    return MapParams()
+      ..message = Message.exception
+      ..strMsg = e;
   }
 }

@@ -54,6 +54,9 @@ Other ideas are welcome...
 
 - 2023-08-10
   - Some speed improvements while painting the panorama
+  - Showing progress while downloading tiles
+  - Showing exceptions in the progress screen
+  - Adding INTERNET permission
 
 - 2023-08-09
   - added progress-info for locking to GPS, downloading, and painting

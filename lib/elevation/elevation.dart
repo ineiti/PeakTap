@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:typed_data';
 
+import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:archive/archive.dart';
 import 'package:latlong2/latlong.dart';
@@ -31,7 +32,7 @@ class HeightProfileProvider {
   Future<int> getHeightAsync(LatLng pos) async {
     try {
       return getHeight(pos);
-    } catch (e){
+    } catch (e) {
       await getTile(pos);
       return getHeight(pos);
     }
@@ -41,7 +42,7 @@ class HeightProfileProvider {
     final tileKey = _getTileKey(pos);
 
     if (!_tiles.containsKey(tileKey)) {
-      throw("Tile not in cache");
+      throw ("Tile not in cache");
     }
 
     var height = _tiles[tileKey]!.readPixel(pos);
@@ -92,38 +93,34 @@ class HeightProfileProvider {
     _downloadLog.add(HPMessage(dataKey, 0));
     // await Future.delayed(const Duration(microseconds: 1));
 
-    final url = Uri.https('srtm.csi.cgiar.org',
-        '/wp-content/uploads/files/srtm_5x5/TIFF/$dataKey.zip');
-    // print("Downloading $url");
-    var client = HttpClient();
-    client.badCertificateCallback = (_, __, ___) => true;
-    final request = await client.getUrl(url);
-    final response = await request.close();
-    // print("Downloaded $url, status is: ${response.statusCode}");
+    final url = 'https://srtm.csi.cgiar.org'
+        '/wp-content/uploads/files/srtm_5x5/TIFF/$dataKey.zip';
 
+    final response = await Dio()
+        .get<List<int>>(url, options: Options(responseType: ResponseType.bytes),
+            onReceiveProgress: (received, total) {
+      int percentage = ((received / total) * 100).floor();
+      _downloadLog.add(HPMessage(dataKey, percentage));
+    });
     if (response.statusCode == 200) {
       // print("Unzipping");
-      final zipBytes = await consolidateHttpClientResponseBytes(response);
-      final archive = ZipDecoder().decodeBytes(zipBytes);
+      final archive = ZipDecoder().decodeBytes(response.data!);
 
       // print("Searching files");
       for (final file in archive) {
         // print("Found file ${file.name}");
         if (file.isFile && file.name.endsWith('.tif')) {
-          _downloadLog.add(HPMessage(dataKey, 100));
-          await Future.delayed(const Duration(microseconds: 1));
           return file.content;
         }
       }
 
       throw Exception('SRTM tile file not found in the downloaded archive');
+    } else if (response.statusCode == 404) {
+      // Missing tiles mean that it's open ocean or part of the earth that
+      // hasn't been scanned, like the North- and the South-pole.
+      return Uint8List(0);
     } else {
-      if (response.statusCode == 404) {
-        // Missing tiles mean that it's open ocean or part of the earth that
-        // hasn't been scanned, like the North- and the South-pole.
-        return Uint8List(0);
-      }
-      throw Exception('Failed to download SRTM tile: ${response.toString()}');
+      throw ("Unknown error while downloading tile: ${response.statusMessage}");
     }
   }
 }

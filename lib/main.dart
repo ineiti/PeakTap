@@ -133,6 +133,7 @@ class _MainPageState extends State<MainPage> {
     var textDownloadDone = "";
     var textPaint = "";
     var textDownloadProgress = "";
+    var textException = "";
 
     Future.microtask(() async {
       if (newPosition == null) {
@@ -168,6 +169,9 @@ class _MainPageState extends State<MainPage> {
         event.isPaintingStatus((msg) {
           textPaint = "\nPainting progress: $msg%";
         });
+        event.isException((p0) {
+          textException = "\n$p0";
+        });
         updateDialog.sink.add(null);
       });
 
@@ -202,7 +206,8 @@ class _MainPageState extends State<MainPage> {
                     Text(textStr +
                         textDownloadDone +
                         textPaint +
-                        textDownloadProgress)
+                        textDownloadProgress +
+                        textException)
                   ],
                 ),
               );

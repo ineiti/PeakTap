@@ -11,7 +11,7 @@ class PanoramaImageBuilder {
   final _stream = StreamController<PIBMessage>.broadcast();
 
   final double horStart = 0, horEnd = 360;
-  final double verStart = -5, verEnd = 85;
+  final double verStart = -5, verEnd = 25;
   final int maxDistance = 200000;
 
   PanoramaImageBuilder(this.hp){
