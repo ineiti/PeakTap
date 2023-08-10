@@ -52,6 +52,9 @@ Other ideas are welcome...
 
 ## CHANGELOG
 
+- 2023-08-10
+  - Some speed improvements while painting the panorama
+
 - 2023-08-09
   - added progress-info for locking to GPS, downloading, and painting
 

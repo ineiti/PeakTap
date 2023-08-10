@@ -71,14 +71,14 @@ class PanoramaImageBuilder {
         var alpha = atan(distance / earthRadius);
         var horizon = (1 - cos(alpha)) * earthRadius;
         var ll = LatLng(lat, lng);
-        var height = await hp.getHeightAsync(ll);
-        // var height = 0.0;
-        // try {
-        //   height = hp.getHeight(ll) - horizon;
-        // } catch (e){
-        //   await hp.getTile(LatLng(lat, lng));
-        //   height = hp.getHeight(ll) - horizon;
-        // }
+        var height = 0.0;
+        try {
+          height = hp.getHeight(ll) - horizon;
+        } catch (e){
+          await hp.getTile(LatLng(lat, lng));
+          height = hp.getHeight(ll) - horizon;
+        }
+        var height_abs = height.toDouble() + horizon;
         var verAngle = atan((height - heightReference) / distance) * 180 / pi;
         // print("$lat/$lng - $distance = $height - angle: $verAngle");
         if (verAngle > verAngleMax) {
@@ -97,16 +97,18 @@ class PanoramaImageBuilder {
             tmpImage.setPixelRgb(vert, j, gray, gray, gray);
             tmpImage.setPixelRgb(
                 vert + panoramaWidth.toInt(), j, gray, gray, gray);
-            offsetToLatLang[j][vert] = LatLng(lat, lng);
-            offsetToHeight[j][vert] = height.toDouble() + horizon;
+            offsetToLatLang[j][vert] = ll;
+            offsetToHeight[j][vert] = height_abs;
             offsetToDistance[j][vert] = distance;
           }
           verAngleMax = verAngle;
         }
       }
-      // Give the scheduler the possibility to do something else.
-      await Future.delayed(const Duration(microseconds: 1));
       int newPercentage = vert * 100 ~/ panoramaWidth;
+      // Give the scheduler the possibility to do something else.
+      // If this is only done in the condition below, the painting process
+      // takes around 20% less time. But then the UI gets ugly.
+      await Future.delayed(const Duration(microseconds: 1));
       if (newPercentage > percentage){
         percentage = newPercentage;
         _stream.add(PIBMessage.sendPaintPercentage(percentage));

@@ -38,8 +38,13 @@ class HeightProfileProvider {
   }
 
   int getHeight(LatLng pos) {
-    final tileImg = _getTile(pos);
-    final height = tileImg.readPixel(pos);
+    final tileKey = _getTileKey(pos);
+
+    if (!_tiles.containsKey(tileKey)) {
+      throw("Tile not in cache");
+    }
+
+    var height = _tiles[tileKey]!.readPixel(pos);
     if (height == -32768) {
       // The SRTM maps encode -32768 as the sea height.
       return 0;
@@ -72,16 +77,6 @@ class HeightProfileProvider {
       _downloading[tileKey] = false;
     }
     _tiles.putIfAbsent(tileKey, () => TiffImage(tileData!));
-  }
-
-  TiffImage _getTile(LatLng pos) {
-    final tileKey = _getTileKey(pos);
-
-    if (!_tiles.containsKey(tileKey)) {
-      throw("Tile not in cache");
-    }
-    return _tiles[tileKey]!;
-    // print("tile key is: $tileKey");
   }
 
   String _getTileKey(LatLng pos) {

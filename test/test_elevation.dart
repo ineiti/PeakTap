@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:latlong2/latlong.dart';
@@ -38,11 +39,18 @@ void main() {
     });
 
     test('performance measurements of panorama', () async {
+      // Height: 10
       // Start: 3.65s-3.89s
       // simplify gray: 3.75s-3.79s
       // no await in getHeight: 192ms
       // Now this is strange, as for the real painting the speed increase is
-      // not as big, but only 8.7s -> 5.3s.
+      // not as big, but only 8.7s -> 4.4s, which is still very nice.
+      //
+      // New height: 400
+      // Start: 4.7s
+      // Don't recalculate 'offsetTo*': 4.4s
+      // Don't call Future.delayed for every line: 3.9s - Pixel XL: 3.0s
+      //   But this makes the UI really ugly...
       Completer<void> done = Completer();
 
       final pib = PanoramaImageBuilder(provider);
@@ -59,7 +67,7 @@ void main() {
           print("Downloading ${msg.name}: ${msg.percentage}");
         });
       });
-      pib.drawPanorama(10, const LatLng(46.5, 6.5));
+      pib.drawPanorama(400, const LatLng(46.5, 6.5));
       await done.future;
     });
   });
