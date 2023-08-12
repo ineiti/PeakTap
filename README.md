@@ -50,9 +50,17 @@ I would like to implement the following:
 
 Other ideas are welcome...
 
+# Privacy Policy
+
+The app owner is [Linus Gasser](ineiti@gasser.blue), and the app is copyrighted 2023.
+The following data is collected by version 1.0.0:
+- the SRTM website has access to the tiles you download from their site. Here is their [Disclaimer](https://srtm.csi.cgiar.org/disclaimer/)
+- openStreetMap has access to all the places you are connecting to. Here is their [Privacy Policy](https://wiki.osmfoundation.org/wiki/Privacy_Policy)
+- no other data is collected by the app
+
 ## CHANGELOG
 
-- 2023-08-10
+- 2023-08-10 - rc2
   - Some speed improvements while painting the panorama
   - Showing progress while downloading tiles
   - Showing exceptions in the progress screen

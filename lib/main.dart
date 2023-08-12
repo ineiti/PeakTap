@@ -21,7 +21,7 @@ class PeakTap extends StatelessWidget {
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
-      home: const MainPage(title: 'Interactive Mountain Panoramas'),
+      home: const MainPage(title: 'Interactive Mountain Panorama'),
     );
   }
 }
