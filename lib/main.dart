@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
@@ -234,24 +235,29 @@ class _HorizontalButtonRowState extends State<_HorizontalButtonRow> {
 
   @override
   Widget build(BuildContext context) {
+    var buttons = [
+      ElevatedButton(
+        onPressed: () {
+          widget.toMain.add(MainMsg.updateGPS);
+        },
+        child: const Text('Update GPS'),
+      )
+    ];
+    if (kDebugMode) {
+      buttons += [
+        ElevatedButton(
+          onPressed: () {
+            widget.toMain.add(MainMsg.repaint);
+          },
+          child: const Text('Repaint'),
+        )
+      ];
+    }
     return Padding(
       padding: const EdgeInsets.all(8.0),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-        children: [
-          ElevatedButton(
-            onPressed: () {
-              widget.toMain.add(MainMsg.updateGPS);
-            },
-            child: const Text('Update GPS'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              widget.toMain.add(MainMsg.repaint);
-            },
-            child: const Text('Repaint'),
-          )
-        ],
+        children: buttons,
       ),
     );
   }
