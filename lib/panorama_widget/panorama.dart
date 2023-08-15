@@ -14,13 +14,13 @@ class PanoramaImageBuilder {
   final double verStart = -5, verEnd = 25;
   final int maxDistance = 200000;
 
-  PanoramaImageBuilder(this.hp){
+  PanoramaImageBuilder(this.hp) {
     hp.downloadLogStream().listen((event) {
       _stream.add(PIBMessage.sendDownloadStatus(event));
     });
   }
 
-  Stream<PIBMessage> getStream(){
+  Stream<PIBMessage> getStream() {
     return _stream.stream;
   }
 
@@ -74,11 +74,11 @@ class PanoramaImageBuilder {
         var height = 0.0;
         try {
           height = hp.getHeight(ll) - horizon;
-        } catch (e){
+        } catch (e) {
           await hp.getTile(LatLng(lat, lng));
           height = hp.getHeight(ll) - horizon;
         }
-        var height_abs = height.toDouble() + horizon;
+        var heightAbs = height.toDouble() + horizon;
         var verAngle = atan((height - heightReference) / distance) * 180 / pi;
         // print("$lat/$lng - $distance = $height - angle: $verAngle");
         if (verAngle > verAngleMax) {
@@ -92,24 +92,31 @@ class PanoramaImageBuilder {
               break;
             }
             // print("Set pixel $vert/$j to $gray");
-            var gray = min(
-                max((log(distance * distScale) * grayMult), 0), 255);
+            var gray = min(max((log(distance * distScale) * grayMult), 0), 255);
             tmpImage.setPixelRgb(vert, j, gray, gray, gray);
             tmpImage.setPixelRgb(
                 vert + panoramaWidth.toInt(), j, gray, gray, gray);
             offsetToLatLang[j][vert] = ll;
-            offsetToHeight[j][vert] = height_abs;
+            offsetToHeight[j][vert] = heightAbs;
             offsetToDistance[j][vert] = distance;
           }
           verAngleMax = verAngle;
         }
+      }
+      for (var j = 0;
+          j < (verAngleMax - verEnd) * tmpImage.height / (verStart - verEnd);
+          j++) {
+        final rg = 96 * j / tmpImage.height + 96;
+        tmpImage.setPixelRgb(vert, j.toInt(), rg, rg, 255);
+        tmpImage.setPixelRgb(vert + panoramaWidth.toInt(), j.toInt(), rg, rg,
+            255);
       }
       int newPercentage = vert * 100 ~/ panoramaWidth;
       // Give the scheduler the possibility to do something else.
       // If this is only done in the condition below, the painting process
       // takes around 20% less time. But then the UI gets ugly.
       await Future.delayed(const Duration(microseconds: 1));
-      if (newPercentage > percentage){
+      if (newPercentage > percentage) {
         percentage = newPercentage;
         _stream.add(PIBMessage.sendPaintPercentage(percentage));
       }
@@ -130,18 +137,18 @@ class PIBMessage {
     return PIBMessage().._msg = msg;
   }
 
-  static PIBMessage sendPaintPercentage(int perc){
+  static PIBMessage sendPaintPercentage(int perc) {
     return PIBMessage().._paintPerc = perc;
   }
 
-  void isDownloadStatus(void Function(HPMessage msg) useIt){
-    if (_msg != null){
+  void isDownloadStatus(void Function(HPMessage msg) useIt) {
+    if (_msg != null) {
       useIt(_msg!);
     }
   }
 
-  void isPaintPercentage(void Function(int perc) useIt){
-    if (_paintPerc != null){
+  void isPaintPercentage(void Function(int perc) useIt) {
+    if (_paintPerc != null) {
       useIt(_paintPerc!);
     }
   }
