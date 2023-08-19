@@ -50,7 +50,8 @@ void main() {
       // Start: 4.7s
       // Don't recalculate 'offsetTo*': 4.4s
       // Don't call Future.delayed for every line: 3.9s - Pixel XL: 3.0s
-      //   But this makes the UI really ugly...
+      //   But this makes the UI really ugly, so it is not activated
+      // Use List instead of Map: 2.8s - Pixel XL: 2.9s
       Completer<void> done = Completer();
 
       final pib = PanoramaImageBuilder(provider);

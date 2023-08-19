@@ -60,6 +60,10 @@ The following data is collected by version 1.0.0:
 
 ## CHANGELOG
 
+- 2023-08-19 - rc4
+  - Added blue sky
+  - Even faster drawing of panorama
+
 - 2023-08-10 - rc2
   - Some speed improvements while painting the panorama
   - Showing progress while downloading tiles

@@ -43,6 +43,7 @@ class PanoramaImageBuilder {
     var distScale = 1e-3;
     var grayMult = 255 / log(maxDistance * distScale);
     // for (var vert = 0; vert < 1; vert++) {
+    print("Size is: $panoramaWidth x ${maxDistance / stepSize}");
     for (var vert = 0; vert < panoramaWidth; vert++) {
       // print("Vertical is: $vert");
       var lat = location.latitude;

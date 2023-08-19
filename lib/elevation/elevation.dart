@@ -12,7 +12,8 @@ import 'tiffimage.dart';
 
 class HeightProfileProvider {
   final String initPath;
-  final Map<String, TiffImage> _tiles = {};
+  final List<List<TiffImage?>> _tiles =
+      List.generate(99, (_) => List.generate(99, (_) => null));
   final Map<String, bool> _downloading = {};
   final _downloadLog = StreamController<HPMessage>.broadcast();
 
@@ -39,13 +40,13 @@ class HeightProfileProvider {
   }
 
   int getHeight(LatLng pos) {
-    final tileKey = _getTileKey(pos);
+    final (lat, lon) = _getTileIndex(pos);
 
-    if (!_tiles.containsKey(tileKey)) {
+    if (_tiles[lat][lon] == null) {
       throw ("Tile not in cache");
     }
 
-    var height = _tiles[tileKey]!.readPixel(pos);
+    var height = _tiles[lat][lon]!.readPixel(pos);
     if (height == -32768) {
       // The SRTM maps encode -32768 as the sea height.
       return 0;
@@ -54,7 +55,9 @@ class HeightProfileProvider {
   }
 
   Future<void> getTile(LatLng pos) async {
-    final tileKey = _getTileKey(pos);
+    final (lat, lon) = _getTileIndex(pos);
+    final tileKey =
+        'srtm_${lon.toString().padLeft(2, "0")}_${lat.toString().padLeft(2, "0")}';
 
     Uint8List? tileData;
     var tileFile = File("$initPath/$tileKey.tiff");
@@ -77,16 +80,16 @@ class HeightProfileProvider {
       }
       _downloading[tileKey] = false;
     }
-    _tiles.putIfAbsent(tileKey, () => TiffImage(tileData!));
+    _tiles[lat][lon] = TiffImage(tileData);
   }
 
-  String _getTileKey(LatLng pos) {
+  (int, int) _getTileIndex(LatLng pos) {
     // Magic calculation when looking at https://srtm.csi.cgiar.org/download
     // And it seems that the srtm website mixed up latitude and longitude, which
     // seems very strange for that project.
-    final lat = (12 - (pos.latitude / 5).floor()).toString().padLeft(2, "0");
-    final lon = ((pos.longitude / 5).floor() + 37).toString().padLeft(2, "0");
-    return 'srtm_${lon}_$lat';
+    final lat = (12 - (pos.latitude / 5).floor());
+    final lon = ((pos.longitude / 5).floor() + 37);
+    return (lat, lon);
   }
 
   Future<Uint8List> _downloadTile(String dataKey) async {
