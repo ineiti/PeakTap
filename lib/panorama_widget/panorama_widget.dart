@@ -34,6 +34,7 @@ class PanoramaWidgetState extends State<PanoramaWidget> {
   final GlobalKey _widgetKey = GlobalKey();
   final imgHeight = 256;
   final tapTime = 200;
+  var zooming = false;
   TapDownDetails? tapPos;
   int? down;
 
@@ -61,6 +62,19 @@ class PanoramaWidgetState extends State<PanoramaWidget> {
               _piUI?.tap(tapPos!.localPosition);
             });
           }
+        },
+        onScaleUpdate: (details) {
+          if (zooming && _piUI == null) {
+            return;
+          }
+          if ((details.scale < 1 && _piUI!.isPOI()) ||
+              (details.scale > 1 && !_piUI!.isPOI())) {
+            zooming = true;
+            _piUI?.tap(details.localFocalPoint);
+          }
+        },
+        onScaleEnd: (_) {
+          zooming = false;
         },
         child: Listener(
           key: _widgetKey,

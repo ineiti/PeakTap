@@ -28,7 +28,6 @@ Example screenshot of zooming in on Mont Blanc:
 I would like to implement the following:
 
 - display updates
-  - when zooming in the panorama view, switch to goggle view
   - add a 360-degree view on the bottom and let the user 
 - more progress-info needs:
   - show precision on GPS-lock
@@ -61,6 +60,10 @@ The following data is collected by version 1.0.0:
 - no other data is collected by the app
 
 ## CHANGELOG
+
+- 2023-09-07 - rc5 (waiting for iOS approval)
+  - display updates
+    - when zooming in the panorama view, switch to goggle view
 
 - 2023-08-19 - rc4
   - Added blue sky
