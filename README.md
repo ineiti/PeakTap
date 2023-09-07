@@ -27,9 +27,11 @@ Example screenshot of zooming in on Mont Blanc:
 
 I would like to implement the following:
 
+- display updates
+  - when zooming in the panorama view, switch to goggle view
+  - add a 360-degree view on the bottom and let the user 
 - more progress-info needs:
   - show precision on GPS-lock
-  - show downloading-progress
 - having some buttons to enable/disable features:
   - make mountains higher (if they're far away) / lower (if you're in the Valais)
   - enable / disable earth curvature
