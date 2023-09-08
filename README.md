@@ -28,7 +28,8 @@ Example screenshot of zooming in on Mont Blanc:
 I would like to implement the following:
 
 - display updates
-  - add a 360-degree view on the bottom and let the user 
+  - add a 360-degree view on the bottom and let the user scroll fast using it
+  - add translations
 - more progress-info needs:
   - show precision on GPS-lock
 - having some buttons to enable/disable features:
@@ -36,7 +37,6 @@ I would like to implement the following:
   - enable / disable earth curvature
   - showing the panorama in the direction the phone points 
   - height above current point (standard is 10m)
-- show complete panorama on bottom and allow user to scroll fast using it
 - load tiles from https://map.ineiti.ch for faster loading
 - skip "Searching for GPS" by allowing the user to choose the standing point
 
