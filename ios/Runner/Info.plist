@@ -42,7 +42,8 @@
     Only the required height-maps are downloaded, without revealing your precise location.
 
     By allowing location access, you help us in providing a more accurate and
-    personalized experience within the app.</key>
+    personalized experience within the app.</string>
+    <key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
 	<key>UILaunchStoryboardName</key>
 	<string>LaunchScreen</string>
@@ -63,5 +64,7 @@
 	</array>
 	<key>UIViewControllerBasedStatusBarAppearance</key>
 	<false/>
+	<key>UIApplicationSupportsIndirectInputEvents</key>
+	<true/>
 </dict>
 </plist>
