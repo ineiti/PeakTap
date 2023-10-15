@@ -1,3 +1,4 @@
+import 'dart:math';
 import 'dart:typed_data';
 
 import 'package:latlong2/latlong.dart';
@@ -49,7 +50,7 @@ class TiffImage {
   }
 
   int readPixel(LatLng pos) {
-    if (empty){
+    if (empty) {
       return -32768;
     }
 
@@ -63,8 +64,45 @@ class TiffImage {
       throw Exception("Position outside of this tile");
     }
 
-    int x = ((pos.longitude - _image.degreeLeft) / 5.0 * _image.width).floor();
-    int y = ((_image.degreeTop - pos.latitude) / 5.0 * _image.height).floor();
+    double dx = ((pos.longitude - _image.degreeLeft) / 5.0 * _image.width);
+    double dy = ((_image.degreeTop - pos.latitude) / 5.0 * _image.height);
+    int x = dx.floor();
+    int y = dy.floor();
+
+    return _readMean(x, y, dx - x, dy - y).round();
+  }
+
+  double _readMean(int x, int y, double dx, double dy) {
+    int p00 = _readOffset(x, y);
+    int p01 = _readOffset(x, y + 1);
+    int p10 = _readOffset(x + 1, y);
+    int p11 = _readOffset(x + 1, y + 1);
+    int pm = (p00 + p01 + p10 + p11) ~/ 4;
+
+    // Mirror all occurrences into the lower triangle.
+    (dx, dy) = (dx - 0.5, dy - 0.5);
+    if (dy > 0 && dy > dx.abs()) {
+      p00 = p01;
+      p10 = p11;
+      dy *= -1;
+    } else if (dx < 0 && dy.abs() < -dx) {
+      p10 = p01;
+      (dx, dy) = (dy, dx);
+    } else if (dx > 0 && dy.abs() < dx) {
+      p00 = p11;
+      (dx, dy) = (-dy, -dx);
+    }
+    (dx, dy) = (dx + 0.5, dy + 0.5);
+
+    int c = p00;
+    int a = p10 - c;
+    int b = 2 * pm - a - 2 * c;
+    return a * dx + b * dy + c;
+  }
+
+  int _readOffset(int x, int y) {
+    x = max(0, min(x, 5999));
+    y = max(0, min(y, 5999));
     int strip = y ~/ _image.rowsPerStrip;
     int stripLine = y % _image.rowsPerStrip;
 
@@ -169,9 +207,9 @@ class IFD {
           assert(offsetValue == 2);
           break;
         case IFD.geoModelTiepointTag:
-          // This would be interesting as it should show which points are tied
-          // from the raster to the 'real' world.
-          // Let's print them:
+        // This would be interesting as it should show which points are tied
+        // from the raster to the 'real' world.
+        // Let's print them:
           assert(type == IFD.typeDouble);
           for (int i = 0; i < 3; i++) {
             assert(data.getFloat64(offsetValue + i * 8, endianness) == 0.0);
@@ -202,10 +240,10 @@ class IFD {
                 .add(data.getUint32(offsetValue + i * 4, endianness));
           }
           break;
-        // This can be used to debug new tags, like the Geotags found at the end.
-        // default:
-        //   print("Field 0x${tag.toRadixString(16)} with value "
-        //       "0x${offsetValue.toRadixString(16)} not handled yet");
+      // This can be used to debug new tags, like the Geotags found at the end.
+      // default:
+      //   print("Field 0x${tag.toRadixString(16)} with value "
+      //       "0x${offsetValue.toRadixString(16)} not handled yet");
       }
     }
     ret.nextOffset = data.getUint32(offset + 2 + nbrEntries * 12, endianness);

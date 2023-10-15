@@ -29,6 +29,8 @@ I would like to implement the following:
 
 - remove unused tiles from the cache to decrease memory usage
 - display updates
+  - interpolate heights from other points
+  - paint according to direction of 
   - add a 360-degree view on the bottom and let the user scroll fast using it
   - add translations
 - more progress-info needs:
