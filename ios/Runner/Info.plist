@@ -27,8 +27,22 @@
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
 	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>To show your position on the map, we need to ask GPS</string>
-	<key>UIApplicationSupportsIndirectInputEvents</key>
+	<string>We require access to your location to accurately display your position
+	on the map and generate the corresponding panorama of your surroundings.
+	Here's how we use your location data:
+
+    - To pinpoint your exact position on the map and to render the relevant panorama.
+    - To download the precise height-maps of your immediate surroundings to
+    enhance the accuracy of the panorama.
+
+    Privacy Assurance:
+
+    - Your location data remains on your device and is not stored externally.
+    - We do not share your exact location with any third parties.
+    Only the required height-maps are downloaded, without revealing your precise location.
+
+    By allowing location access, you help us in providing a more accurate and
+    personalized experience within the app.</key>
 	<true/>
 	<key>UILaunchStoryboardName</key>
 	<string>LaunchScreen</string>
