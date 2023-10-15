@@ -74,7 +74,6 @@ class HeightProfileProvider {
       } else {
         _downloading[tileKey] = true;
         tileData = await _downloadTile(tileKey);
-        // DEBUG: don't save for the moment
         tileFile.writeAsBytesSync(tileData);
         _downloading[tileKey] = false;
       }
