@@ -27,11 +27,14 @@ Example screenshot of zooming in on Mont Blanc:
 
 I would like to implement the following:
 
+- remove unused tiles from the cache to decrease memory usage
 - display updates
   - add a 360-degree view on the bottom and let the user scroll fast using it
   - add translations
 - more progress-info needs:
   - show precision on GPS-lock
+  - when downloading map, show that it's decompressing instead of 
+   sticking to "99%"
 - having some buttons to enable/disable features:
   - make mountains higher (if they're far away) / lower (if you're in the Valais)
   - enable / disable earth curvature
