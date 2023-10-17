@@ -2,6 +2,7 @@ import 'dart:math';
 import 'dart:typed_data';
 
 import 'package:latlong2/latlong.dart';
+import 'package:vector_math/vector_math.dart';
 
 // Code started by ChatGPT https://chat.openai.com/share/a7fd62ce-7b91-4fa3-a5cc-bac968b584ee
 // Then rewritten and implemented using
@@ -49,9 +50,9 @@ class TiffImage {
     // print("Found $_image");
   }
 
-  int readPixel(LatLng pos) {
+  (int, Vector3) readPixel(LatLng pos) {
     if (empty) {
-      return -32768;
+      return (-32768, Vector3.zero());
     }
 
     // print("Position is: $pos - Top left is: (${_image.degreeTop}, ${_image.degreeLeft})");
@@ -69,35 +70,25 @@ class TiffImage {
     int x = dx.floor();
     int y = dy.floor();
 
-    return _readMean(x, y, dx - x, dy - y).round();
+    return _readMean(x, y, dx - x, dy - y);
   }
 
-  double _readMean(int x, int y, double dx, double dy) {
-    int p00 = _readOffset(x, y);
-    int p01 = _readOffset(x, y + 1);
-    int p10 = _readOffset(x + 1, y);
-    int p11 = _readOffset(x + 1, y + 1);
-    int pm = (p00 + p01 + p10 + p11) ~/ 4;
+  (int, Vector3) _readMean(int x, int y, double dx, double dy) {
+    // https://en.wikipedia.org/wiki/Bilinear_interpolation#On_the_unit_square
+    var (p00, p01, p10, p11) = (
+      _readOffset(x, y),
+      _readOffset(x, y + 1),
+      _readOffset(x + 1, y),
+      _readOffset(x + 1, y + 1)
+    );
+    var (a00, a10, a01, a11) =
+        (p00, p10 - p00, p01 - p00, p11 - p10 - p01 + p00);
 
-    // Mirror all occurrences into the lower triangle.
-    (dx, dy) = (dx - 0.5, dy - 0.5);
-    if (dy > 0 && dy > dx.abs()) {
-      p00 = p01;
-      p10 = p11;
-      dy *= -1;
-    } else if (dx < 0 && dy.abs() < -dx) {
-      p10 = p01;
-      (dx, dy) = (dy, dx);
-    } else if (dx > 0 && dy.abs() < dx) {
-      p00 = p11;
-      (dx, dy) = (-dy, -dx);
-    }
-    (dx, dy) = (dx + 0.5, dy + 0.5);
-
-    int c = p00;
-    int a = p10 - c;
-    int b = 2 * pm - a - 2 * c;
-    return a * dx + b * dy + c;
+    var height = a00 + a10 * dx + a01 * dy + a11 * dx * dy;
+    Vector3 v1 = Vector3(1, 0, a10 + a11 * dy),
+        v2 = Vector3(0, 1, a01 + a11 * dx),
+        normal = v2.cross(v1);
+    return (height.toInt(), normal);
   }
 
   int _readOffset(int x, int y) {
@@ -207,9 +198,9 @@ class IFD {
           assert(offsetValue == 2);
           break;
         case IFD.geoModelTiepointTag:
-        // This would be interesting as it should show which points are tied
-        // from the raster to the 'real' world.
-        // Let's print them:
+          // This would be interesting as it should show which points are tied
+          // from the raster to the 'real' world.
+          // Let's print them:
           assert(type == IFD.typeDouble);
           for (int i = 0; i < 3; i++) {
             assert(data.getFloat64(offsetValue + i * 8, endianness) == 0.0);
@@ -240,10 +231,10 @@ class IFD {
                 .add(data.getUint32(offsetValue + i * 4, endianness));
           }
           break;
-      // This can be used to debug new tags, like the Geotags found at the end.
-      // default:
-      //   print("Field 0x${tag.toRadixString(16)} with value "
-      //       "0x${offsetValue.toRadixString(16)} not handled yet");
+        // This can be used to debug new tags, like the Geotags found at the end.
+        // default:
+        //   print("Field 0x${tag.toRadixString(16)} with value "
+        //       "0x${offsetValue.toRadixString(16)} not handled yet");
       }
     }
     ret.nextOffset = data.getUint32(offset + 2 + nbrEntries * 12, endianness);

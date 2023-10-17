@@ -5,6 +5,7 @@ import 'dart:math' show atan, cos, log, max, min, sin;
 import 'package:image/image.dart' as img;
 import 'package:latlong2/latlong.dart';
 import 'package:peak_tap/elevation/elevation.dart';
+import 'package:vector_math/vector_math.dart';
 
 class PanoramaImageBuilder {
   HeightProfileProvider hp;
@@ -29,7 +30,7 @@ class PanoramaImageBuilder {
     var tmpImage = img.Image(width: height * 12 * 2, height: height);
     List<List<LatLng?>> offsetToLatLang =
         List.generate(height, (i) => List.filled(height * 12, null));
-    List<List<double?>> offsetToHeight =
+    List<List<int?>> offsetToHeight =
         List.generate(height, (i) => List.filled(height * 12, null));
     List<List<int?>> offsetToDistance =
         List.generate(height, (i) => List.filled(height * 12, null));
@@ -63,6 +64,8 @@ class PanoramaImageBuilder {
               pi;
       // print("Angle: dLat / dLng = $horAngle: $dLat / $dLng");
       var heightReference = await hp.getHeightAsync(LatLng(lat, lng)) + 10;
+      var illumination = Vector3(1, -1, -2);
+      illumination.applyAxisAngle(Vector3(0, 0, -1), horAngle);
       // print("heightReference is $heightReference");
       for (var distance = 0; distance < maxDistance; distance += stepSize) {
         lat += dLat;
@@ -72,16 +75,37 @@ class PanoramaImageBuilder {
         var alpha = atan(distance / earthRadius);
         var horizon = (1 - cos(alpha)) * earthRadius;
         var ll = LatLng(lat, lng);
-        var height = 0.0;
+        int heightAbs;
+        Vector3 normal;
         try {
-          height = hp.getHeight(ll) - horizon;
+          (heightAbs, normal) = hp.getHeightNormal(ll);
         } catch (e) {
           await hp.getTile(LatLng(lat, lng));
-          height = hp.getHeight(ll) - horizon;
+          (heightAbs, normal) = hp.getHeightNormal(ll);
         }
-        var heightAbs = height.toDouble() + horizon;
+        var height = heightAbs - horizon.toInt();
         var verAngle = atan((height - heightReference) / distance) * 180 / pi;
         // print("$lat/$lng - $distance = $height - angle: $verAngle");
+
+        // var gray = min(max((log(distance * distScale) * grayMult), 0), 255);
+        int r, g, b;
+        if (normal == Vector3(0, 0, -1)) {
+          (r, g, b) = (100, 100, 155);
+        } else {
+          var gray = 120 * (1 + cos(normal.angleTo(illumination)));
+          if (heightAbs > 2000) {
+            gray = min(255, gray * (min(heightAbs, 3000) / 2500 + 0.2));
+          }
+          (r, g, b) = (gray.toInt(), gray.toInt(), gray.toInt());
+          if (heightAbs < 500) {
+            r = r * 10 ~/ 12;
+            b = b * 10 ~/ 12;
+          } else if (heightAbs < 1000) {
+            r = r * 10 ~/ 11;
+            b = b * 10 ~/ 11;
+          }
+        }
+
         if (verAngle > verAngleMax) {
           for (var j = 0; j < tmpImage.height; j++) {
             var verAnglePan =
@@ -93,10 +117,8 @@ class PanoramaImageBuilder {
               break;
             }
             // print("Set pixel $vert/$j to $gray");
-            var gray = min(max((log(distance * distScale) * grayMult), 0), 255);
-            tmpImage.setPixelRgb(vert, j, gray, gray, gray);
-            tmpImage.setPixelRgb(
-                vert + panoramaWidth.toInt(), j, gray, gray, gray);
+            tmpImage.setPixelRgb(vert, j, r, g, b);
+            tmpImage.setPixelRgb(vert + panoramaWidth.toInt(), j, r, g, b);
             offsetToLatLang[j][vert] = ll;
             offsetToHeight[j][vert] = heightAbs;
             offsetToDistance[j][vert] = distance;
@@ -109,8 +131,8 @@ class PanoramaImageBuilder {
           j++) {
         final rg = 96 * j / tmpImage.height + 96;
         tmpImage.setPixelRgb(vert, j.toInt(), rg, rg, 255);
-        tmpImage.setPixelRgb(vert + panoramaWidth.toInt(), j.toInt(), rg, rg,
-            255);
+        tmpImage.setPixelRgb(
+            vert + panoramaWidth.toInt(), j.toInt(), rg, rg, 255);
       }
       int newPercentage = vert * 100 ~/ panoramaWidth;
       // Give the scheduler the possibility to do something else.
@@ -159,7 +181,7 @@ class PanoramaImage {
   ui.Image map;
   List<List<LatLng?>> offsetToLatLang;
   List<List<int?>> offsetToDistance;
-  List<List<double?>> offsetToHeight;
+  List<List<int?>> offsetToHeight;
 
   PanoramaImage(this.map, this.offsetToLatLang, this.offsetToDistance,
       this.offsetToHeight);

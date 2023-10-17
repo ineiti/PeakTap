@@ -255,8 +255,8 @@ class _OffsetImage extends CustomPainter {
 }
 
 class _POIElements {
-  late double heading, height;
-  int distance;
+  late double heading;
+  int distance, height;
 
   _POIElements(this.heading, this.height, this.distance);
 }
@@ -397,7 +397,7 @@ class _PIUI {
     return pImage.offsetToLatLang[p.$2][p.$1]!;
   }
 
-  double _toHeight(ui.Offset pos) {
+  int _toHeight(ui.Offset pos) {
     final p = _firstPanoramaPoint(pos);
     return pImage.offsetToHeight[p.$2][p.$1]!;
   }

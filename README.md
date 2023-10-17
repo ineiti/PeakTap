@@ -29,8 +29,6 @@ I would like to implement the following:
 
 - remove unused tiles from the cache to decrease memory usage
 - display updates
-  - interpolate heights from other points
-  - paint according to direction of 
   - add a 360-degree view on the bottom and let the user scroll fast using it
   - add translations
 - more progress-info needs:
@@ -65,6 +63,14 @@ The following data is collected by version 1.0.0:
 - no other data is collected by the app
 
 ## CHANGELOG
+
+- 2023-10-17 - v1.0.3+8
+  - interpolate heights from other points
+  - paint according to inclination of tile
+
+- 2023-10-15 - v1.0.2+7
+  - GPS request info update for passing apple-store
+  - added intro screen
 
 - 2023-09-07 - rc5 (waiting for iOS approval)
   - display updates

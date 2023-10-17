@@ -1,12 +1,12 @@
 import 'dart:async';
-import 'dart:typed_data';
+import 'dart:math' show cos;
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:peak_tap/elevation/elevation.dart';
 import 'package:peak_tap/panorama_widget/panorama.dart';
 import 'package:tuple/tuple.dart';
-import 'package:universal_io/io.dart';
+import 'package:vector_math/vector_math.dart';
 
 void main() {
   group('HeightProfileProvider', () {
@@ -32,9 +32,34 @@ void main() {
         const Tuple2(8326, LatLng(35.879971, 76.515084)) // K2
       ];
 
-      for (var test in tests){
+      for (var test in tests) {
         print("Testing $test");
         expect(await provider.getHeight(test.item2), test.item1);
+      }
+    });
+
+    test('show two normal vectors of a lake', () async {
+      final tests = [
+        const (370, LatLng(46.496589, 6.519988)), // Lake Geneva
+        const (370, LatLng(46.451990, 6.665779)), // Lake Geneva
+      ];
+      for (var test in tests){
+        await provider.getTile(test.$2);
+        var (_, normal) = provider.getHeightNormal(test.$2);
+        print("Normal is: $normal");
+      }
+    });
+
+    test('Test different points in a square', () async {
+      for (var lat = 46.0008; lat >= 46.0000; lat -= 0.0002) {
+        for (var lng = 6.0; lng <= 6.0008; lng += 0.0002) {
+          var test = LatLng(lat, lng);
+          await provider.getTile(test);
+          var (height, normal) = provider.getHeightNormal(test);
+          // var gray = 128 * (1 + cos(normal.angleTo(Vector3(1, 1, -1))));
+          // print("Gray: $gray for $height / $normal");
+          print("For $test: $height / $normal");
+        }
       }
     });
 
@@ -60,7 +85,7 @@ void main() {
           if (perc % 10 == 0) {
             print("Painting: $perc%");
           }
-          if (perc == 99){
+          if (perc == 99) {
             done.complete();
           }
         });

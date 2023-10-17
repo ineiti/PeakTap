@@ -7,6 +7,7 @@ import 'package:archive/archive.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:universal_io/io.dart';
+import 'package:vector_math/vector_math.dart';
 
 import 'tiffimage.dart';
 
@@ -39,19 +40,23 @@ class HeightProfileProvider {
     }
   }
 
-  int getHeight(LatLng pos) {
+  (int, Vector3) getHeightNormal(LatLng pos) {
     final (lat, lon) = _getTileIndex(pos);
 
     if (_tiles[lat][lon] == null) {
       throw ("Tile not in cache");
     }
 
-    var height = _tiles[lat][lon]!.readPixel(pos);
+    var (height, normal) = _tiles[lat][lon]!.readPixel(pos);
     if (height == -32768) {
       // The SRTM maps encode -32768 as the sea height.
-      return 0;
+      return (0, normal);
     }
-    return height;
+    return (height, normal);
+  }
+
+  int getHeight(LatLng pos){
+    return getHeightNormal(pos).$1;
   }
 
   Future<void> getTile(LatLng pos) async {
