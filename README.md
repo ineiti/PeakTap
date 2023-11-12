@@ -64,6 +64,10 @@ The following data is collected by version 1.0.0:
 
 ## CHANGELOG
 
+- 2023-11-12 - v1.0.4+9
+  - updated screenshots for first startup
+  - add lightning to rendering
+
 - 2023-10-17 - v1.0.3+8
   - interpolate heights from other points
   - paint according to inclination of tile

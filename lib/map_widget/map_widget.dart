@@ -41,14 +41,12 @@ class MapWidgetState extends State<MapWidget> {
       var markers = [
         Marker(
             point: _markerCenter!,
-            builder: (context) =>
-                const Image(image: AssetImage('assets/pin.png'))),
+            child: const Image(image: AssetImage('assets/pin.png'))),
       ];
       if (_markerPOI != null) {
         markers.add(Marker(
           point: _markerPOI!,
-          builder: (context) =>
-              const Image(image: AssetImage('assets/binoculars.png')),
+          child: const Image(image: AssetImage('assets/binoculars.png')),
         ));
       }
       return FlutterMap(
@@ -56,7 +54,7 @@ class MapWidgetState extends State<MapWidget> {
         options: MapOptions(
           center: _markerCenter!,
           zoom: 10,
-          onTap: (TapPosition? pos, LatLng newPosition) =>
+          onTap: (pos, newPosition) =>
               widget.fromMap.add(MapParams.sendLocationViewpoint(newPosition)),
           onMapReady: () => mapReady = true,
         ),
