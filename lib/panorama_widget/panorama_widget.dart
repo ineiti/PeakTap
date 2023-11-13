@@ -94,11 +94,9 @@ class PanoramaWidgetState extends State<PanoramaWidget> {
   }
 
   void _updateOffset(Offset off) {
-    if (DateTime.now().millisecondsSinceEpoch - down! > tapTime) {
-      setState(() {
-        _piUI?.updateOffset(off);
-      });
-    }
+    setState(() {
+      _piUI?.updateOffset(off);
+    });
   }
 
   @override

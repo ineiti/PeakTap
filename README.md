@@ -64,6 +64,9 @@ The following data is collected by version 1.0.0:
 
 ## CHANGELOG
 
+- 2023-11-13 - v1.0.5+10
+  - BUG: when first started up, the panorama cannot be scrolled
+
 - 2023-11-12 - v1.0.4+9
   - updated screenshots for first startup
   - add lightning to rendering
