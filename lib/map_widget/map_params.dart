@@ -25,6 +25,7 @@ class MapParams {
   Message? message;
   List<LatLng>? horizon;
   int? paintPerc;
+  double? viewDirection;
   HPMessage? hpMsg;
   String? strMsg;
 
@@ -101,6 +102,13 @@ class MapParams {
     }
   }
 
+  void isViewDirection(void Function(double) useIt){
+    if (viewDirection != null){
+      debug("IsViewDirection");
+      useIt(viewDirection!);
+    }
+  }
+
   static MapParams sendLocation(LatLng loc, LocationUsage u) {
     debug("SendLocation $u");
     return MapParams()
@@ -146,5 +154,10 @@ class MapParams {
     return MapParams()
       ..message = Message.exception
       ..strMsg = e;
+  }
+
+  static MapParams sendViewDirection(double dir){
+    return MapParams()
+        ..viewDirection = dir;
   }
 }

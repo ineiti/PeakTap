@@ -64,6 +64,10 @@ The following data is collected by version 1.0.0:
 
 ## CHANGELOG
 
+- 2023-11-15 - v1.0.6+11
+  - Apple-store complaint fixed: when the GPS doesn't give a fix in a reasonable time, show
+  a list of pre-defined positions to jump to
+
 - 2023-11-13 - v1.0.5+10
   - BUG: when first started up, the panorama cannot be scrolled
 

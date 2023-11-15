@@ -136,6 +136,13 @@ class PanoramaWidgetState extends State<PanoramaWidget> {
             }
           });
         });
+        event.isViewDirection((dir) {
+          if (_piUI != null) {
+            setState(() {
+              _piUI!.setOffsetDir(dir);
+            });
+          }
+        });
       });
       widget.fromPanorama.add(MapParams.sendSetupFinish());
     });
@@ -312,6 +319,14 @@ class _PIUI {
         _fromPanorama.add(MapParams.sendFitHorizon());
         break;
     }
+  }
+
+  setOffsetDir(double dx) {
+    _shown = DisplayState.horizon;
+    mapOffset =
+        Offset(_mapViewWidth() / 2 + dx / 360 * _mapWidth(), _mapHeight() / 2);
+    _fromPanorama.add(MapParams.sendHorizon(_getHorizon()));
+    _fromPanorama.add(MapParams.sendFitHorizon());
   }
 
   updateOffset(Offset off) {

@@ -118,9 +118,14 @@ class _AppWidgetState extends State<AppWidget> {
 
     Future.microtask(() async {
       if (newPosition == null) {
-        var position = await _determinePosition();
-        newPosition = LatLng(position.latitude, position.longitude);
-        textStr += "\nLocked on GPS";
+        try {
+          var position = await _determinePosition();
+          newPosition = LatLng(position.latitude, position.longitude);
+          textStr += "\nLocked on GPS";
+        } catch(e){
+          textStr += "\nCouldn't find GPS - showing Matterhorn";
+          newPosition = const LatLng(46.011714, 7.791969);
+        }
         updateDialog.sink.add(null);
       }
       final posParam = MapParams.sendLocationViewpoint(newPosition!);
@@ -135,6 +140,7 @@ class _AppWidgetState extends State<AppWidget> {
         event.isHorizon((p0) {
           Navigator.of(context).pop();
           done.complete();
+          toPanorama.add(MapParams.sendViewDirection(240));
         });
       });
       var listenerPan = fromPanorama.stream.listen((event) {
@@ -142,6 +148,8 @@ class _AppWidgetState extends State<AppWidget> {
           if (msg.percentage == 100) {
             textDownloadDone += "\nDownloaded tile ${msg.name}";
             textDownloadProgress = "";
+          } else if (msg.percentage >= 98) {
+            textDownloadProgress = "\nUnzipping tile ${msg.name}";
           } else {
             textDownloadProgress =
                 "\nDownloading tile ${msg.name}: ${msg.percentage}%";
@@ -281,5 +289,7 @@ Future<Position> _determinePosition() async {
 
   // When we reach here, permissions are granted and we can
   // continue accessing the position of the device.
-  return await Geolocator.getCurrentPosition();
+  return await Geolocator.getCurrentPosition(
+    timeLimit: const Duration(seconds: 10)
+  );
 }
