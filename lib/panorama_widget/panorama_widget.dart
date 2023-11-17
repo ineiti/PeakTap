@@ -325,8 +325,6 @@ class _PIUI {
     _shown = DisplayState.horizon;
     mapOffset =
         Offset(_mapViewWidth() / 2 + dx / 360 * _mapWidth(), _mapHeight() / 2);
-    _fromPanorama.add(MapParams.sendHorizon(_getHorizon()));
-    _fromPanorama.add(MapParams.sendFitHorizon());
   }
 
   updateOffset(Offset off) {

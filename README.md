@@ -64,6 +64,9 @@ The following data is collected by version 1.0.0:
 
 ## CHANGELOG
 
+- 2023-11-17 - v1.0.7+12
+  - Fix bug where the direction of the view is always initialized to 240˚
+
 - 2023-11-15 - v1.0.6+11
   - Apple-store complaint fixed: when the GPS doesn't give a fix in a reasonable time, show
   a list of pre-defined positions to jump to

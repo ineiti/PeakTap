@@ -125,6 +125,7 @@ class _AppWidgetState extends State<AppWidget> {
         } catch(e){
           textStr += "\nCouldn't find GPS - showing Matterhorn";
           newPosition = const LatLng(46.011714, 7.791969);
+          toPanorama.add(MapParams.sendViewDirection(240));
         }
         updateDialog.sink.add(null);
       }
@@ -140,7 +141,6 @@ class _AppWidgetState extends State<AppWidget> {
         event.isHorizon((p0) {
           Navigator.of(context).pop();
           done.complete();
-          toPanorama.add(MapParams.sendViewDirection(240));
         });
       });
       var listenerPan = fromPanorama.stream.listen((event) {
