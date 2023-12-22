@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intro_slider/intro_slider.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 class IntroWidget extends StatefulWidget {
   const IntroWidget(this.sink, {super.key});
@@ -12,58 +13,48 @@ class IntroWidget extends StatefulWidget {
 
 class _IntroWidget extends State<IntroWidget> {
   List<ContentConfig> listContentConfig = [];
+  AppLocalizations? i18n;
 
   @override
   void initState() {
     super.initState();
+  }
+
+  void initListContent() {
+    if (listContentConfig.isNotEmpty) {
+      return;
+    }
 
     listContentConfig.add(
-      const ContentConfig(
-        title: "Draw Panoramas",
-        description:
-            "Draw wonderful panoramas of the mountains and hills around your. "
-            "Or visit other places to see what panorama you saw the day before, "
-            "or what you can expect on that trip next week!",
+      ContentConfig(
+        title: i18n?.intro_1_title,
+        description: i18n?.intro_1_text,
         pathImage: "assets/intro/mont_blanc_1.png",
-        backgroundColor: Color(0xffaaaa55),
+        backgroundColor: const Color(0xffaaaa55),
       ),
     );
     listContentConfig.add(
-      const ContentConfig(
-        title: "Pan around",
-        description:
-            "You can pan the panorama view to see a different part of the horizon. "
-            "On the map the view of the horizon will be updated. "
-            "This allows you to evaluate the distance to the hills and mountains "
-            "around you.",
+      ContentConfig(
+        title: i18n?.intro_2_title,
+        description: i18n?.intro_2_text,
         pathImage: "assets/intro/mont_blanc_2.png",
-        backgroundColor: Color(0xff99aa55),
+        backgroundColor: const Color(0xff99aa55),
       ),
     );
     listContentConfig.add(
-      const ContentConfig(
-        title: "Put on the Binoculars",
-        description:
-            "If you want to know more about a given spot in the panorama, you can "
-            "simply tap on it and a magnified view will pop up. "
-            "The display will show the heading, distance, and height of the "
-            "chosen point in the panorama. "
-            "Of course you can still pan around.",
+      ContentConfig(
+        title: i18n?.intro_3_title,
+        description: i18n?.intro_3_text,
         pathImage: "assets/intro/mont_blanc_3.png",
-        backgroundColor: Color(0xff77aa55),
+        backgroundColor: const Color(0xff77aa55),
       ),
     );
     listContentConfig.add(
-      const ContentConfig(
-        title: "Loading the Maps",
-        description:
-            "The first time you view a panorama in a new geographical zone, the app "
-            "will download the elevation-maps. "
-            "This takes some time, so please be patient. "
-            "Once the maps are loaded, they will be stored for faster "
-            "viewing pleasure.",
+      ContentConfig(
+        title: i18n?.intro_4_title,
+        description: i18n?.intro_4_text,
         pathImage: "assets/intro/loading_map.png",
-        backgroundColor: Color(0xff55aa55),
+        backgroundColor: const Color(0xff55aa55),
       ),
     );
   }
@@ -74,6 +65,8 @@ class _IntroWidget extends State<IntroWidget> {
 
   @override
   Widget build(BuildContext context) {
+    i18n ??= AppLocalizations.of(context);
+    initListContent();
     return IntroSlider(
       key: UniqueKey(),
       listContentConfig: listContentConfig,

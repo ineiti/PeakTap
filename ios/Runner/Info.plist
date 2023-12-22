@@ -2,6 +2,14 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>CFBundleLocalizations</key>
+	<array>
+		<string>de</string>
+		<string>fr</string>
+		<string>en</string>
+	</array>
+	<key>LSApplicationCategoryType</key>
+	<string>public.app-category.travel</string>
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
 	<key>CFBundleDevelopmentRegion</key>
@@ -33,8 +41,6 @@
     Your location data remains on your device and is not stored externally.
     We do not share your exact location with any third parties.
     </string>
-    <key>CADisableMinimumFrameDurationOnPhone</key>
-	<true/>
 	<key>UILaunchStoryboardName</key>
 	<string>LaunchScreen</string>
 	<key>UIMainStoryboardFile</key>

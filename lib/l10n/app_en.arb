@@ -1,0 +1,13 @@
+{
+  "title": "Interactive Mountain Panorama",
+  "intro_1_title": "Draw Panoramas",
+  "intro_1_text": "Draw wonderful panoramas of the mountains and hills around your location. Or visit other places to see what panorama you saw the day before. You can even check what you can expect on that trip next week!",
+  "intro_2_title": "Pan around",
+  "intro_2_text": "You can pan the panorama view to see a different part of the horizon. On the map the view of the horizon will be updated. This allows you to evaluate the distance to the hills and mountains around you.",
+  "intro_3_title": "Put on the Binoculars",
+  "intro_3_text": "If you want to know more about a given spot in the panorama, you can simply tap on it and a magnified view will pop up. The display will show the heading, distance, and height of the chosen point in the panorama. Of course you can still pan around.",
+  "intro_4_title": "Loading the Maps",
+  "intro_4_text": "The first time you view a panorama in a new geographical zone, the app will download the elevation-maps. This takes some time, so please be patient. Once the maps are loaded, they will be stored for faster viewing pleasure.",
+
+  "zzz": "The end"
+}

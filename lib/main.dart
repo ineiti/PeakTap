@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:peak_tap/app_widget.dart';
 import 'package:peak_tap/intro_widget.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 void main() {
   runApp(const PeakTap());
@@ -15,20 +17,29 @@ class PeakTap extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      localizationsDelegates: const [
+        AppLocalizations.delegate,
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      supportedLocales: const [
+        Locale('en'), // English
+        Locale('fr'), // French
+        Locale('de'), // German
+      ],
       debugShowCheckedModeBanner: false,
       title: 'PeakTap',
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
-      home: const MainPage(title: 'Interactive Mountain Panorama'),
+      home: const MainPage(),
     );
   }
 }
 
 class MainPage extends StatefulWidget {
-  const MainPage({super.key, required this.title});
-
-  final String title;
+  const MainPage({super.key});
 
   @override
   State<MainPage> createState() => _MainPage();
@@ -44,7 +55,7 @@ class _MainPage extends State<MainPage> {
 
     showAppChannel.stream.listen((event) {
       setState(() {
-        showApp = true;
+        showApp = !showApp;
         SharedPreferences.getInstance()
             .then((value) => {value.setBool("showApp", true)});
       });
@@ -58,7 +69,7 @@ class _MainPage extends State<MainPage> {
   @override
   Widget build(BuildContext context) {
     if (showApp) {
-      return AppWidget(title: widget.title);
+      return AppWidget(showAppChannel.sink);
     } else {
       return IntroWidget(showAppChannel.sink);
     }

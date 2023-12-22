@@ -6,11 +6,12 @@ import 'package:latlong2/latlong.dart';
 import 'map_widget/map_params.dart';
 import 'map_widget/map_widget.dart';
 import 'panorama_widget/panorama_widget.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 class AppWidget extends StatefulWidget {
-  const AppWidget({super.key, required this.title});
+  const AppWidget(this.sink, {super.key});
 
-  final String title;
+  final Sink<void> sink;
 
   @override
   State<AppWidget> createState() => _AppWidgetState();
@@ -28,6 +29,7 @@ class _AppWidgetState extends State<AppWidget> {
   final toPanorama = StreamController<MapParams>.broadcast();
   final fromPanorama = StreamController<MapParams>.broadcast();
   final toMain = StreamController<MainMsg>();
+  AppLocalizations? i18n;
 
   @override
   void initState() {
@@ -65,9 +67,19 @@ class _AppWidgetState extends State<AppWidget> {
 
   @override
   Widget build(BuildContext context) {
+    i18n ??= AppLocalizations.of(context);
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.title),
+        title: Text(i18n!.title),
+        actions: <Widget>[
+          IconButton(
+            icon: const Icon(Icons.info),
+            tooltip: 'Show Intro',
+            onPressed: () {
+              widget.sink.add(null);
+            },
+          ),
+        ],
       ),
       body: Center(
         child: Column(
@@ -122,7 +134,7 @@ class _AppWidgetState extends State<AppWidget> {
           var position = await _determinePosition();
           newPosition = LatLng(position.latitude, position.longitude);
           textStr += "\nLocked on GPS";
-        } catch(e){
+        } catch (e) {
           textStr += "\nCouldn't find GPS - showing Matterhorn";
           newPosition = const LatLng(46.011714, 7.791969);
           toPanorama.add(MapParams.sendViewDirection(240));
@@ -290,6 +302,5 @@ Future<Position> _determinePosition() async {
   // When we reach here, permissions are granted and we can
   // continue accessing the position of the device.
   return await Geolocator.getCurrentPosition(
-    timeLimit: const Duration(seconds: 10)
-  );
+      timeLimit: const Duration(seconds: 10));
 }

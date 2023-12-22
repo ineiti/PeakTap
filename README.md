@@ -30,7 +30,8 @@ I would like to implement the following:
 - remove unused tiles from the cache to decrease memory usage
 - display updates
   - add a 360-degree view on the bottom and let the user scroll fast using it
-  - add translations
+  - increase OpenStreetMap fonts
+  - add translations for more than just the intro screen
 - more progress-info needs:
   - show precision on GPS-lock
   - when downloading map, show that it's decompressing instead of 
@@ -64,12 +65,16 @@ The following data is collected by version 1.0.0:
 
 ## CHANGELOG
 
+- 2023-12-20 - v1.0.8+13
+  - add an "info" button to replay intro and "Buy me a coffee"
+  - add French and German translation
+
 - 2023-11-17 - v1.0.7+12
   - Fix bug where the direction of the view is always initialized to 240˚
 
 - 2023-11-15 - v1.0.6+11
-  - Apple-store complaint fixed: when the GPS doesn't give a fix in a reasonable time, show
-  a list of pre-defined positions to jump to
+  - Apple-store complaint fixed: when the GPS doesn't give a fix in a reasonable time, 
+  show the Matterhorn
 
 - 2023-11-13 - v1.0.5+10
   - BUG: when first started up, the panorama cannot be scrolled
